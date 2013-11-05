@@ -83,6 +83,17 @@
       var content = get(this, 'content');
       Ember.assert(fmt("Cannot delegate set('%@', %@) to the 'content' property of object proxy %@: its 'content' is undefined.", [ property, value, this ]), content);
       return set(content, property, value);
+    },
+
+    toJSON: function () {
+      var jsonProperties = {};
+
+      var content = get(this, 'content');
+      for (var property in content) {
+        jsonProperties[property] = get(content, property);
+      }
+
+      return jsonProperties;
     }
 
   });
