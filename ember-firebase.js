@@ -10,7 +10,11 @@
    */
   Firebase.get = function (ref) {
     var deferred = RSVP.defer();
-    ref.once('value', deferred.resolve, deferred.reject);
+
+    ref.once('value', function (snapshot) {
+      deferred.resolve(getSnapshotValue(snapshot));
+    }, deferred.reject);
+
     return deferred.promise;
   };
 
@@ -18,7 +22,7 @@
    * Sets the value of the given ref, with an optional priority. Returns
    * a promise that is resolved when the sync is complete.
    */
-  Firebase.set = function (ref, value, priority) {
+  Firebase.set = function (ref, object, priority) {
     var deferred = RSVP.defer();
 
     function onComplete(error) {
@@ -28,6 +32,8 @@
         deferred.resolve();
       }
     }
+
+    var value = getObjectValue(object);
 
     if (priority === undefined) {
       ref.set(value, onComplete);
