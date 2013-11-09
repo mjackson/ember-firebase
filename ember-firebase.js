@@ -197,9 +197,9 @@
     },
 
     /**
-     * All Ember.MutableArray methods use this method to do modifications on the
-     * array proxy's content. We use it instead to do modifications on the underlying
-     * ref which propagates those changes to all listeners synchronously.
+     * All Ember.MutableArray methods use this method to modify the array proxy's
+     * content. We use it instead to make modifications on the underlying ref
+     * instead, which propagates those changes to all listeners synchronously.
      */
     replaceContent: function (index, amount, objects) {
       var ref = get(this, 'ref');
