@@ -1,7 +1,46 @@
-(function (Ember, undefined) {
+(function (Ember, Firebase, undefined) {
 
-  var get = Ember.get, set = Ember.set, fmt = Ember.String.fmt;
+  var get = Ember.get,
+      set = Ember.set,
+      fmt = Ember.String.fmt,
+      RSVP = Ember.RSVP;
 
+  /**
+   * Returns a promise for the value at the given ref.
+   */
+  Firebase.get = function (ref) {
+    var deferred = RSVP.defer();
+    ref.once('value', deferred.resolve, deferred.reject);
+    return deferred.promise;
+  };
+
+  /**
+   * Sets the value of the given ref, with an optional priority. Returns
+   * a promise that is resolved when the sync is complete.
+   */
+  Firebase.set = function (ref, value, priority) {
+    var deferred = RSVP.defer();
+
+    function onComplete(error) {
+      if (error) {
+        deferred.reject(error);
+      } else {
+        deferred.resolve();
+      }
+    }
+
+    if (priority === undefined) {
+      ref.set(value, onComplete);
+    } else {
+      ref.setWithPriority(value, priority, onComplete);
+    }
+
+    return deferred.promise;
+  };
+
+  /**
+   * An Ember.Mixin for objects that are a proxy for a Firebase location.
+   */
   Firebase.Proxy = Ember.Mixin.create({
 
     ref: null,
@@ -51,6 +90,10 @@
     return 'Firebase.Proxy';
   };
 
+  /**
+   * An Ember.ObjectProxy for a Firebase data structure.
+   * See https://www.firebase.com/docs/data-structure.html
+   */
   Firebase.Object = Ember.ObjectProxy.extend(Firebase.Proxy, {
 
     init: function () {
@@ -62,38 +105,41 @@
       set(this, 'content', {});
     }.observesBefore('ref'),
 
-    setUnknownProperty: function (property, value) {
-      get(this, 'ref').child(property).set(value);
+    /**
+     * Ember.set uses this method to set properties on objects when the property
+     * is not already present. We use it to set values on the underlying ref
+     * instead, which propagates those changes to all listeners synchronously.
+     */
+    setUnknownProperty: function (property, object) {
+      get(this, 'ref').child(property).set(getObjectValue(object));
       return get(this, property);
     },
 
     childWasAdded: function (snapshot) {
-      return this._setContentProperty(snapshot.name(), getSnapshotValue(snapshot));
+      return set(get(this, 'content'), snapshot.name(), getSnapshotValue(snapshot));
     },
 
     childWasChanged: function (snapshot) {
-      return this._setContentProperty(snapshot.name(), getSnapshotValue(snapshot));
+      return set(get(this, 'content'), snapshot.name(), getSnapshotValue(snapshot));
     },
 
     childWasRemoved: function (snapshot) {
-      return this._setContentProperty(snapshot.name(), undefined);
-    },
-
-    _setContentProperty: function (property, value) {
-      var content = get(this, 'content');
-      Ember.assert(fmt("Cannot delegate set('%@', %@) to the 'content' property of object proxy %@: its 'content' is undefined.", [ property, value, this ]), content);
-      return set(content, property, value);
+      return set(get(this, 'content'), snapshot.name(), undefined);
     },
 
     toJSON: function () {
-      var jsonProperties = {};
+      var json = {};
 
       var content = get(this, 'content');
       for (var property in content) {
-        jsonProperties[property] = get(content, property);
+        json[property] = get(content, property);
       }
 
-      return jsonProperties;
+      return json;
+    },
+
+    toString: function () {
+      return fmt('<%@:%@>', [ get(this, 'constructor').toString(), get(this, 'ref').toString() ]);
     }
 
   });
@@ -106,6 +152,120 @@
 
   });
 
+  /**
+   * An Ember.ArrayProxy that respects the ordering of a Firebase data structure.
+   * See https://www.firebase.com/docs/managing-lists.html
+   *
+   * IMPORTANT: There is currently no way to preserve the ordering of an array in a
+   * Firebase data structure. Thus, when you add objects to a Firebase.Array using
+   * Ember.MutableArray's methods (e.g. insertAt, unshiftObject, etc.) you will not
+   * see that ordering in the array. Instead, all objects added to an array are
+   * simply pushed onto it.
+   *
+   * If you need to enforce your own ordering you must use Firebase's priority feature.
+   * You can either use the setWithPriority method directly on a child location of
+   * this array's ref, or use pushObjectWithPriority.
+   *
+   * For more information on priorities and how Firebase stores ordered data, see
+   * https://www.firebase.com/docs/ordered-data.html
+   */
+  Firebase.Array = Ember.ArrayProxy.extend(Firebase.Proxy, {
+
+    init: function () {
+      this._resetContent();
+      this._super();
+    },
+
+    _resetContent: function () {
+      set(this, 'content', Ember.A());
+      this._names = [];
+    }.observesBefore('ref'),
+
+    /**
+     * A convenience method for unconditionally adding an object to this array
+     * with the given priority. For more information on Firebase priorities, see
+     * https://www.firebase.com/docs/ordered-data.html
+     */
+    pushObjectWithPriority: function (object, priority) {
+      get(this, 'ref').push().setWithPriority(getObjectValue(object), priority);
+    },
+
+    /**
+     * All Ember.MutableArray methods use this method to do modifications on the
+     * array proxy's content. We use it instead to do modifications on the underlying
+     * ref which propagates those changes to all listeners synchronously.
+     */
+    replaceContent: function (index, amount, objects) {
+      var ref = get(this, 'ref');
+
+      // Remove objects that are being replaced.
+      for (var i = 0; i < amount; ++i) {
+        ref.child(this._names[index + i]).remove();
+      }
+
+      // Add new objects.
+      objects.forEach(function (object) {
+        // TODO: Is there any way we can add the objects
+        // at the given index instead of just using push?
+        ref.push(getObjectValue(object));
+      });
+    },
+
+    _indexAfter: function (name) {
+      return name ? this._names.indexOf(name) + 1 : 0;
+    },
+
+    childWasAdded: function (snapshot, previousName) {
+      var index = this._indexAfter(previousName);
+      get(this, 'content').insertAt(index, getSnapshotValue(snapshot));
+      this._names[index] = snapshot.name();
+    },
+
+    childWasChanged: function (snapshot, previousName) {
+      var index = this._indexAfter(previousName);
+      get(this, 'content').replace(index, 1, [ getSnapshotValue(snapshot) ]);
+      this._names[index] = snapshot.name();
+    },
+
+    childWasRemoved: function (snapshot) {
+      var index = this._names.indexOf(snapshot.name());
+      if (index !== -1) {
+        get(this, 'content').removeAt(index);
+        this._names.splice(index, 1);
+      }
+    },
+
+    childWasMoved: function (snapshot, previousName) {
+      this.childWasRemoved(snapshot);
+      this.childWasAdded(snapshot, previousName);
+    },
+
+    toJSON: function () {
+      var content = get(this, 'content');
+      var names = this._names;
+
+      var json = {};
+      for (var i = 0, len = names.length; i < len; ++i) {
+        json[names[i]] = content.objectAt(i);
+      }
+
+      return json;
+    },
+
+    toString: function () {
+      return fmt('<%@:%@>', [ get(this, 'constructor').toString(), get(this, 'ref').toString() ]);
+    }
+
+  });
+
+  Firebase.Array.reopenClass({
+
+    toString: function () {
+      return 'Firebase.Array';
+    }
+
+  });
+
   function getSnapshotValue(snapshot) {
     if (snapshot.hasChildren()) {
       return Firebase.Object.create({ ref: snapshot.ref() });
@@ -114,91 +274,8 @@
     return snapshot.val();
   }
 
-  // var FirebaseArray = Ember.ArrayProxy.extend(FirebaseProxy, {
-  //
-  //   _contentType: 'array',
-  //
-  //   _resetContent: function () {
-  //     set(this, 'content', []);
-  //     this._names = Ember.A();
-  //   },
-  //
-  //   _indexAfter: function (name) {
-  //     return name ? this._names.indexOf(name) + 1 : 0;
-  //   },
-  //
-  //   _childWasAdded: function (snapshot, previousName) {
-  //     if (snapshot.name() === '_contentType') return;
-  //     var index = this._indexAfter(previousName);
-  //     this.insertAt(index, createObject(snapshot));
-  //     this._names[index] = snapshot.name();
-  //   },
-  //
-  //   _childWasChanged: function (snapshot, previousName) {
-  //     if (snapshot.name() === '_contentType') return;
-  //     var index = this._indexAfter(previousName);
-  //     this.replace(index, 1, [ createObject(snapshot) ]);
-  //     this._names[index] = snapshot.name();
-  //   },
-  //
-  //   _childWasMoved: function (snapshot, previousName) {
-  //     // TODO: Do we need this?
-  //   },
-  //
-  //   _childWasRemoved: function (snapshot) {
-  //     if (snapshot.name() === '_contentType') return;
-  //     var index = this._names.indexOf(snapshot.name());
-  //     if (index !== -1) {
-  //       this.removeAt(index);
-  //       this._names.splice(index, 1);
-  //     }
-  //   },
-  //
-  //   replaceContent: function (index, amount, objects) {
-  //     var ref = this.get('ref');
-  //
-  //     for (var i = 0; i < amount; ++i) {
-  //       var name = this._names[index + i];
-  //       ref.child(name).remove();
-  //     }
-  //
-  //     objects.forEach(function (object) {
-  //       if (object.toJSON) {
-  //         ref.push(object.toJSON());
-  //       } else {
-  //         ref.push(object);
-  //       }
-  //     });
-  //   },
-  //
-  //   toJSON: function () {
-  //     var content = get(this, 'content');
-  //
-  //     var json = {};
-  //     for (var i = 0, len = this._names.length; i < len; ++i) {
-  //       json[this._names[i]] = get(content, i);
-  //     }
-  //
-  //     json._contentType = get(this, '_contentType');
-  //
-  //     return json;
-  //   }
-  //
-  // });
-  //
-  // function createObject(snapshot) {
-  //   var value = snapshot.val();
-  //   var contentType = value._contentType;
-  //
-  //   if (contentType === 'object') {
-  //     return FirebaseObject.create({ ref: snapshot.ref() });
-  //   }
-  //
-  //   if (contentType === 'array') {
-  //     return FirebaseArray.create({ ref: snapshot.ref() });
-  //   }
-  //
-  //   return value;
-  // }
+  function getObjectValue(object) {
+    return object && object.toJSON ? object.toJSON() : object;
+  }
 
-}(Ember));
+}(Ember, Firebase));
