@@ -297,12 +297,12 @@
       Ember.assert(fmt('Cannot replace content of %@, ref is missing', [ this ]), ref);
 
       // Remove objects that are being replaced.
-      this._names.slice(index, index + amount).forEach(function (childName) {
+      forEach(this._names.slice(index, index + amount), function (childName) {
         ref.child(childName).remove();
       });
 
       // Add new objects.
-      objects.forEach(function (object) {
+      forEach(objects, function (object) {
         // TODO: Is there any way we can add the objects
         // at the given index instead of just using push?
         ref.push(getFirebaseValue(object));
