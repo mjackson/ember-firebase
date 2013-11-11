@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ember-firebase Tests</title>
+    <link rel="stylesheet" href="lib/mocha.css">
+  </head>
+  <body>
+    <div id="mocha"></div>
+
+    <!-- dependencies & setup -->
+    <script src="lib/jquery-1.10.2.js"></script>
+    <script src="lib/handlebars-1.0.0.js"></script>
+    <script src="lib/ember-1.1.2.js"></script>
+    <script src="lib/mocha.js"></script>
+    <script>mocha.setup('bdd');</script>
+    <script src="lib/chai.js"></script>
+    <script src="lib/mocha-as-promised.js"></script>
+    <script src="https://cdn.firebase.com/v0/firebase.js"></script>
+
+    <script>
+    // All tests will run against this ref, so make sure you
+    // don't have any data under it you can't afford to lose.
+    var BASE_REF = new Firebase('https://ember-firebase.firebaseio.com');
+    </script>
+
+    <!-- ember-firebase & tests -->
+    <script src="../ember-firebase.js"></script>
+    <script src="get-set-test.js"></script>
+    <script src="proxy-test.js"></script>
+    <script src="object-test.js"></script>
+    <script src="array-test.js"></script>
+
+    <script>
+      // mocha.checkLeaks();
+      // mocha.globals([ 'jQuery', 'Ember', 'Firebase', 'BASE_REF' ]);
+      mocha.run();
+    </script>
+  </body>
+</html>
