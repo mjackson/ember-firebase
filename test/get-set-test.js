@@ -1,12 +1,12 @@
 describe('Firebase.get and Firebase.set', function () {
 
-  var getValue;
+  var result;
   function setupValue(value) {
-    return Firebase.set(BASE_REF, value).then(function () {
-      return Firebase.get(BASE_REF).then(function (value) {
-        getValue = value;
+    return Firebase.set(BASE_REF, value)
+      .then(Firebase.get)
+      .then(function (value) {
+        result = value;
       });
-    });
   }
 
   describe('when there is no value at a ref', function () {
@@ -15,7 +15,7 @@ describe('Firebase.get and Firebase.set', function () {
     });
 
     it('returns null', function () {
-      expect(getValue).to.equal(null);
+      expect(result).to.equal(null);
     });
   });
 
@@ -26,17 +26,50 @@ describe('Firebase.get and Firebase.set', function () {
     });
 
     it('returns the value', function () {
-      expect(getValue).to.equal(value);
+      expect(result).to.equal(value);
     });
   });
 
-  describe('when a ref has children', function () {
+  describe('when an object is set', function () {
     beforeEach(function () {
-      return setupValue({ my: 'value' });
+      return setupValue({
+        myString: 'value',
+        myObject: { a: 'value' },
+        myArray: Firebase.getArrayValue([ 1, 2, 3 ])
+      });
     });
 
     it('returns a Firebase.Object', function () {
-      expect(getValue).to.be.instanceof(Firebase.Object);
+      expect(result).to.be.instanceof(Firebase.Object);
+    });
+
+    it('returns a Firebase.Object for a nested object', function () {
+      expect(result.get('myObject')).to.be.instanceof(Firebase.Object);
+    });
+
+    it('returns a Firebase.Array for a nested array', function () {
+      expect(result.get('myArray')).to.be.instanceof(Firebase.Array);
+    });
+  });
+
+  describe('when an array is set', function () {
+    beforeEach(function () {
+      return setupValue(Firebase.getArrayValue([
+        { a: 'value' },
+        Firebase.getArrayValue([ 1, 2, 3 ])
+      ]));
+    });
+
+    it('returns a Firebase.Array', function () {
+      expect(result).to.be.instanceof(Firebase.Array);
+    });
+
+    it('returns a Firebase.Object for a nested object', function () {
+      expect(result.objectAt(0)).to.be.instanceof(Firebase.Object);
+    });
+
+    it('returns a Firebase.Array for a nested array', function () {
+      expect(result.objectAt(1)).to.be.instanceof(Firebase.Array);
     });
   });
 

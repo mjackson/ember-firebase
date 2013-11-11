@@ -9,7 +9,7 @@ describe('A Firebase.Array', function () {
 
   var array;
   beforeEach(function () {
-    array = Firebase.Array.create({ ref: BASE_REF });
+    array = Firebase.Array.create({ query: BASE_REF });
     return Firebase.set(BASE_REF, null);
   });
 
@@ -113,7 +113,7 @@ describe('A Firebase.Array', function () {
     var query, limit, objects;
     beforeEach(function () {
       query = BASE_REF.limit(limit = 3);
-      array = Firebase.Array.create({ ref: query });
+      array = Firebase.Array.create({ query: query });
 
       objects = [ 'a', 'b', 'c' ];
       var promises = objects.map(function (object) {
@@ -150,10 +150,13 @@ describe('A Firebase.Array', function () {
   });
 
   describe('pushObjectWithPriority', function () {
+    var returnValues;
     beforeEach(function () {
-      array.pushObjectWithPriority(1, 1);
-      array.pushObjectWithPriority(1, 2);
-      array.pushObjectWithPriority(2, 0);
+      returnValues = [
+        array.pushObjectWithPriority(1, 1),
+        array.pushObjectWithPriority(1, 2),
+        array.pushObjectWithPriority(2, 0)
+      ];
     });
 
     it('unconditionally adds objects', function () {
@@ -162,6 +165,12 @@ describe('A Firebase.Array', function () {
 
     it('adds objects in the correct order', function () {
       expect(array.get('firstObject')).to.equal(2);
+    });
+
+    it('returns a Firebase location reference', function () {
+      returnValues.forEach(function (value) {
+        expect(value).to.be.instanceof(Firebase);
+      });
     });
   });
 

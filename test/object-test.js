@@ -7,7 +7,7 @@ describe('Firebase.Object', function () {
 describe('A Firebase.Object', function () {
   var object;
   beforeEach(function () {
-    object = Firebase.Object.create({ ref: BASE_REF });
+    object = Firebase.Object.create({ query: BASE_REF });
     return Firebase.set(BASE_REF, null);
   });
 
@@ -81,7 +81,7 @@ describe('A Firebase.Object', function () {
   describe('when setting a nested Firebase.Object', function () {
     var result;
     beforeEach(function () {
-      var nestedObject = Firebase.Object.create({ ref: object.get('ref').child('firstKey') });
+      var nestedObject = Firebase.Object.create({ query: object.get('ref').child('firstKey') });
       nestedObject.set('a', 'b');
       nestedObject.set('c', 'd');
 
