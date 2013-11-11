@@ -58,7 +58,7 @@ Since there is no native support for arrays in Firebase, they must be converted 
 
 ```js
 Firebase.set(myRef, [ 1, 2, 3 ].toFirebaseValue())
-  .then(Firebase.set)
+  .then(Firebase.get)
   .then(function (value) {
     // value is a Firebase.Array
   });
