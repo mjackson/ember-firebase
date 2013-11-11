@@ -1,4 +1,4 @@
-ember-firebase is a stable, thoroughly-tested set of [Firebase](https://www.firebase.com/index.html) bindings for [Ember.js](http://emberjs.com/).
+ember-firebase is a stable, [thoroughly-tested](https://github.com/mjijackson/ember-firebase/tree/master/test) set of [Firebase](https://www.firebase.com/index.html) bindings for [Ember.js](http://emberjs.com/).
 
 ### Usage
 
