@@ -3,6 +3,7 @@
   var get = Ember.get,
       set = Ember.set,
       fmt = Ember.String.fmt,
+      forEach = Ember.EnumerableUtils.forEach,
       RSVP = Ember.RSVP;
 
   /**
@@ -59,9 +60,9 @@
   Firebase.getArrayValue = function (array) {
     var value = { _isArray: true };
 
-    for (var i = 0, len = array.length; i < len; ++i) {
-      value[i] = getFirebaseValue(array[i]);
-    }
+    forEach(array, function (object, index) {
+      value[index] = getFirebaseValue(object);
+    });
 
     return value;
   };
@@ -296,9 +297,9 @@
       Ember.assert(fmt('Cannot add objects %@ to %@, ref is missing', [ objects, this ]), ref);
 
       // Remove objects that are being replaced.
-      for (var i = 0; i < amount; ++i) {
-        ref.child(this._names[index + i]).remove();
-      }
+      this._names.slice(index, index + amount).forEach(function (childName) {
+        ref.child(childName).remove();
+      });
 
       // Add new objects.
       objects.forEach(function (object) {

@@ -40,6 +40,16 @@ describe('A Firebase.Array', function () {
         expect(array.contains(object)).to.equal(true);
       });
     });
+
+    describe('when cleared', function () {
+      beforeEach(function () {
+        array.clear();
+      });
+
+      it('has length 0', function () {
+        expect(array.get('length')).to.equal(0);
+      });
+    });
   });
 
   describe('with some objects that are sorted by name', function () {
