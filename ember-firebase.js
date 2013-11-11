@@ -294,7 +294,7 @@
      */
     replaceContent: function (index, amount, objects) {
       var ref = get(this, 'ref');
-      Ember.assert(fmt('Cannot add objects %@ to %@, ref is missing', [ objects, this ]), ref);
+      Ember.assert(fmt('Cannot replace content of %@, ref is missing', [ this ]), ref);
 
       // Remove objects that are being replaced.
       this._names.slice(index, index + amount).forEach(function (childName) {
