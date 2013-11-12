@@ -239,15 +239,15 @@
     },
 
     childWasAdded: function (snapshot) {
-      return set(get(this, 'content'), snapshot.name(), getSnapshotValue(snapshot));
+      set(get(this, 'content'), snapshot.name(), getSnapshotValue(snapshot));
     },
 
     childWasChanged: function (snapshot) {
-      return set(get(this, 'content'), snapshot.name(), getSnapshotValue(snapshot));
+      set(get(this, 'content'), snapshot.name(), getSnapshotValue(snapshot));
     },
 
     childWasRemoved: function (snapshot) {
-      return set(get(this, 'content'), snapshot.name(), undefined);
+      set(get(this, 'content'), snapshot.name(), undefined);
     },
 
     /**
