@@ -80,64 +80,60 @@
   Firebase.Proxy = Ember.Mixin.create({
 
     /**
-     * The Firebase Query this proxy reads from. May also be an actual
-     * Firebase location reference.
-     *
-     * See https://www.firebase.com/docs/javascript/query/index.html
-     */
-    query: null,
-
-    /**
-     * The Firebase location reference for this proxy.
+     * The Firebase location reference for this proxy. May also be a
+     * Firebase query object.
      *
      * See https://www.firebase.com/docs/javascript/firebase/index.html
+     * and https://www.firebase.com/docs/javascript/query/index.html
      */
-    ref: Ember.computed(function () {
-      var query = get(this, 'query');
+    ref: null,
 
-      if (query instanceof Firebase) {
-        return query;
+    /**
+     * The writable Firebase location reference. This is only needed when
+     * the original ref is actually a query.
+     */
+    writableRef: Ember.computed(function () {
+      var ref = get(this, 'ref');
+
+      if (ref && isFunction(ref.ref)) {
+        return ref.ref(); // ref is a query
       }
 
-      if (query && isFunction(query.ref)) {
-        return query.ref();
-      }
-
-      return null;
-    }).property('query'),
+      return ref;
+    }).property('ref'),
 
     init: function () {
       this._super();
-      this._setupQuery();
+      this._setupRef();
     },
 
     willDestroy: function () {
-      this._teardownQuery();
+      this._teardownRef();
     },
 
-    _setupQuery: Ember.observer(function () {
-      var query = get(this, 'query');
+    _setupRef: Ember.observer(function () {
+      var ref = get(this, 'ref');
 
-      if (query) {
-        query.on('value', this.valueDidChange, this);
-        query.on('child_added', this.childWasAdded, this);
-        query.on('child_changed', this.childWasChanged, this);
-        query.on('child_removed', this.childWasRemoved, this);
-        query.on('child_moved', this.childWasMoved, this);
+      if (ref) {
+        ref.on('value', this.valueDidChange, this);
+        ref.on('child_added', this.childWasAdded, this);
+        ref.on('child_changed', this.childWasChanged, this);
+        ref.on('child_removed', this.childWasRemoved, this);
+        ref.on('child_moved', this.childWasMoved, this);
       }
-    }, 'query'),
+    }, 'ref'),
 
-    _teardownQuery: Ember.beforeObserver(function () {
-      var query = get(this, 'query');
+    _teardownRef: Ember.beforeObserver(function () {
+      var ref = get(this, 'ref');
 
-      if (query) {
-        query.off('value', this.valueDidChange);
-        query.off('child_added', this.childWasAdded);
-        query.off('child_changed', this.childWasChanged);
-        query.off('child_removed', this.childWasRemoved);
-        query.off('child_moved', this.childWasMoved);
+      if (ref) {
+        ref.off('value', this.valueDidChange);
+        ref.off('child_added', this.childWasAdded);
+        ref.off('child_changed', this.childWasChanged);
+        ref.off('child_removed', this.childWasRemoved);
+        ref.off('child_moved', this.childWasMoved);
       }
-    }, 'query'),
+    }, 'ref'),
 
     valueDidChange: Ember.K,
     childWasAdded: Ember.K,
@@ -165,7 +161,7 @@
 
     _resetContent: Ember.beforeObserver(function () {
       set(this, 'content', {});
-    }, 'query'),
+    }, 'ref'),
 
     /**
      * Ember.set uses this method to set properties on objects when the property
@@ -173,7 +169,7 @@
      * instead, which propagates those changes to all listeners synchronously.
      */
     setUnknownProperty: function (property, object) {
-      var ref = get(this, 'ref');
+      var ref = get(this, 'writableRef');
       Ember.assert(fmt('Cannot set property %@ on %@, ref is missing', [ property, this ]), ref);
       ref.child(property).set(getFirebaseValue(object));
       return get(this, property);
@@ -203,7 +199,7 @@
     },
 
     toString: function () {
-      return fmt('<%@:%@>', [ get(this, 'constructor').toString(), get(this, 'ref').toString() ]);
+      return fmt('<%@:%@>', [ get(this, 'constructor').toString(), get(this, 'writableRef').toString() ]);
     }
 
   });
@@ -248,21 +244,21 @@
     init: function () {
       this._resetContent();
       this._super();
-      this._setupRef();
+      this._setupWritableRef();
     },
 
     _resetContent: Ember.beforeObserver(function () {
       set(this, 'content', Ember.A([]));
       this._names = [];
-    }, 'query'),
+    }, 'ref'),
 
-    _setupRef: Ember.observer(function () {
-      var ref = get(this, 'ref');
+    _setupWritableRef: Ember.observer(function () {
+      var ref = get(this, 'writableRef');
 
       if (ref) {
         ref.child('_isArray').set(true);
       }
-    }, 'ref'),
+    }, 'writableRef'),
 
     /**
      * A convenience method for unconditionally adding an object to this array,
@@ -272,7 +268,7 @@
      * See https://www.firebase.com/docs/ordered-data.html
      */
     pushObjectWithPriority: function (object, priority) {
-      var ref = get(this, 'ref');
+      var ref = get(this, 'writableRef');
       Ember.assert(fmt('Cannot push object %@ to %@, ref is missing', [ object, this ]), ref);
 
       var value = getFirebaseValue(object);
@@ -293,7 +289,7 @@
      * propagates those changes to all listeners synchronously.
      */
     replaceContent: function (index, amount, objects) {
-      var ref = get(this, 'ref');
+      var ref = get(this, 'writableRef');
       Ember.assert(fmt('Cannot replace content of %@, ref is missing', [ this ]), ref);
 
       // Remove objects that are being replaced.
@@ -355,7 +351,7 @@
     },
 
     toString: function () {
-      return fmt('<%@:%@>', [ get(this, 'constructor').toString(), get(this, 'ref').toString() ]);
+      return fmt('<%@:%@>', [ get(this, 'constructor').toString(), get(this, 'writableRef').toString() ]);
     }
 
   });
@@ -376,10 +372,10 @@
   function getSnapshotValue(snapshot) {
     if (snapshot.hasChildren()) {
       if (snapshot.hasChild('_isArray')) {
-        return Firebase.Array.create({ query: snapshot.ref() });
+        return Firebase.Array.create({ ref: snapshot.ref() });
       }
 
-      return Firebase.Object.create({ query: snapshot.ref() });
+      return Firebase.Object.create({ ref: snapshot.ref() });
     }
 
     return snapshot.val();

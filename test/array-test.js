@@ -9,7 +9,7 @@ describe('A Firebase.Array', function () {
 
   var array;
   beforeEach(function () {
-    array = Firebase.Array.create({ query: BASE_REF });
+    array = Firebase.Array.create({ ref: BASE_REF });
     return Firebase.set(BASE_REF, null);
   });
 
@@ -123,7 +123,7 @@ describe('A Firebase.Array', function () {
     var query, limit, objects;
     beforeEach(function () {
       query = BASE_REF.limit(limit = 3);
-      array = Firebase.Array.create({ query: query });
+      array = Firebase.Array.create({ ref: query });
 
       objects = [ 'a', 'b', 'c' ];
       var promises = objects.map(function (object) {
