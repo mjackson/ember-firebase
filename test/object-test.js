@@ -5,6 +5,7 @@ describe('Firebase.Object', function () {
 });
 
 describe('A Firebase.Object', function () {
+
   var object;
   beforeEach(function () {
     object = Firebase.Object.create({ ref: BASE_REF });
@@ -13,7 +14,7 @@ describe('A Firebase.Object', function () {
 
   it('has the correct string representation', function () {
     expect(object + '').to.include('Firebase.Object');
-    expect(object + '').to.include(object.get('ref').toString());
+    expect(object + '').to.include(object.get('baseUrl'));
   });
 
   describe('with no properties', function () {
@@ -23,30 +24,63 @@ describe('A Firebase.Object', function () {
   });
 
   describe('when a property is set', function () {
-    beforeEach(function () {
-      object.set('key', 'value');
+    describe('with a string value', function () {
+      beforeEach(function () {
+        object.set('key', 'value');
+      });
+
+      it('gets a string', function () {
+        expect(object.get('key')).to.equal('value');
+      });
     });
 
-    it('get returns the correct value', function () {
-      expect(object.get('key')).to.equal('value');
+    describe('with an object value', function () {
+      beforeEach(function () {
+        object.set('key', { a: 'b', c: 'd' });
+      });
+
+      it('gets a Firebase.Object', function () {
+        expect(object.get('key')).to.be.instanceof(Firebase.Object);
+      });
+    });
+
+    describe('with an array value', function () {
+      beforeEach(function () {
+        object.set('key', [ 1, 2, 3 ]);
+      });
+
+      it('gets a Firebase.Object', function () {
+        expect(object.get('key')).to.be.instanceof(Firebase.Object);
+      });
+
+      describe('when converted to an array', function () {
+        beforeEach(function () {
+          object = object.toArray();
+        });
+
+        it('becomes a Firebase.Array with the correct length', function () {
+          expect(object).to.be.instanceof(Firebase.Array);
+          expect(object.get('length')).to.equal(1);
+        });
+      });
     });
   });
 
-  describe('when the ref value is set', function () {
+  describe('when the ref value is set directly', function () {
     beforeEach(function () {
       return Firebase.set(object.get('ref'), { key: 'value' });
     });
 
-    it('get returns the correct value', function () {
+    it('gets the correct value', function () {
       expect(object.get('key')).to.equal('value');
     });
 
-    describe('when the key changes value', function () {
+    describe('and the value changes', function () {
       beforeEach(function () {
         return Firebase.set(object.get('ref').child('key'), 'anotherValue');
       });
 
-      it('get reflects the updated value', function () {
+      it('gets the updated value', function () {
         expect(object.get('key')).to.equal('anotherValue');
       });
     });
@@ -60,41 +94,6 @@ describe('A Firebase.Object', function () {
         expect(object.get('key')).to.equal(undefined);
         expect(object.get('otherKey')).to.equal('otherValue');
       });
-    });
-  });
-
-  describe('when setting nested properties', function () {
-    var result;
-    beforeEach(function () {
-      result = object.set('key', {
-        a: 'a',
-        b: 'b',
-        c: 'c'
-      });
-    });
-
-    it('returns a new Firebase.Object', function () {
-      expect(result).to.be.instanceof(Firebase.Object);
-    });
-  });
-
-  describe('when setting a nested Firebase.Object', function () {
-    var result;
-    beforeEach(function () {
-      var nestedObject = Firebase.Object.create({ ref: object.get('ref').child('firstKey') });
-      nestedObject.set('a', 'b');
-      nestedObject.set('c', 'd');
-
-      result = object.set('secondKey', nestedObject);
-    });
-
-    it('returns a new Firebase.Object', function () {
-      expect(result).to.be.instanceof(Firebase.Object);
-    });
-
-    it('sets the nested properties correctly', function () {
-      expect(object.get('secondKey.a')).to.equal('b');
-      expect(object.get('secondKey.c')).to.equal('d');
     });
   });
 

@@ -5,7 +5,6 @@ describe('Firebase.Array', function () {
 });
 
 describe('A Firebase.Array', function () {
-  var RSVP = Ember.RSVP;
 
   var array;
   beforeEach(function () {
@@ -15,7 +14,7 @@ describe('A Firebase.Array', function () {
 
   it('has the correct string representation', function () {
     expect(array + '').to.include('Firebase.Array');
-    expect(array + '').to.include(array.get('ref').toString());
+    expect(array + '').to.include(array.get('baseUrl'));
   });
 
   describe('with no objects', function () {
@@ -24,7 +23,7 @@ describe('A Firebase.Array', function () {
     });
   });
 
-  describe('with some objects that are not sorted', function () {
+  describe('with objects that are not ordered', function () {
     var objects;
     beforeEach(function () {
       objects = [ 1, 2, 3 ];
@@ -52,15 +51,11 @@ describe('A Firebase.Array', function () {
     });
   });
 
-  describe('with some objects that are sorted by name', function () {
+  describe('with objects that are ordered by name', function () {
     var objects;
     beforeEach(function () {
       objects = [ 'a', 'b', 'c' ];
-      var promises = objects.map(function (object) {
-        return Firebase.set(array.get('ref').child(object), object);
-      });
-
-      return RSVP.all(promises);
+      array.pushObjects(objects);
     });
 
     it('has the correct length', function () {
@@ -74,15 +69,14 @@ describe('A Firebase.Array', function () {
     });
   });
 
-  describe('with some objects that are sorted by priority', function () {
+  describe('with objects that are ordered by priority', function () {
     var objects;
     beforeEach(function () {
       objects = [ 'd', 'e', 'f' ];
-      var promises = objects.map(function (object, index) {
-        return Firebase.set(array.get('ref').child(object), object, index + 1);
-      });
 
-      return RSVP.all(promises);
+      objects.forEach(function (object, index) {
+        array.pushObjectWithPriority(object, index + 1);
+      });
     });
 
     it('has the correct length', function () {
@@ -97,7 +91,7 @@ describe('A Firebase.Array', function () {
 
     describe('when a priority changes', function () {
       beforeEach(function () {
-        return Firebase.set(array.get('ref').child(objects[0]), objects[0], objects.length + 1);
+        return Firebase.set(array.childRef(objects[0]), objects[0], objects.length + 1);
       });
 
       it('preserves the correct order', function () {
@@ -107,30 +101,23 @@ describe('A Firebase.Array', function () {
 
     describe('when a new object is inserted at a lower priority than all others', function () {
       beforeEach(function () {
-        return Firebase.set(array.get('ref').child('g'), 'g', 0);
+        return Firebase.set(array.childRef('g'), 'g', 0);
       });
 
       it('preserves the correct order', function () {
-        expect(array.objectAt(3)).to.equal('f');
-        expect(array.objectAt(2)).to.equal('e');
-        expect(array.objectAt(1)).to.equal('d');
         expect(array.objectAt(0)).to.equal('g');
+        expect(array.objectAt(1)).to.equal('d');
+        expect(array.objectAt(2)).to.equal('e');
+        expect(array.objectAt(3)).to.equal('f');
       });
     });
   });
 
   describe('with a limit', function () {
-    var query, limit, objects;
+    var limit, objects;
     beforeEach(function () {
-      query = BASE_REF.limit(limit = 3);
-      array = Firebase.Array.create({ ref: query });
-
       objects = [ 'a', 'b', 'c' ];
-      var promises = objects.map(function (object) {
-        return Firebase.set(BASE_REF.child(object), object);
-      });
-
-      return RSVP.all(promises);
+      array.limit(limit = 3).pushObjects(objects);
     });
 
     it('has the correct length', function () {
@@ -140,7 +127,9 @@ describe('A Firebase.Array', function () {
     describe('when an object is added', function () {
       var childRef;
       beforeEach(function () {
-        return Firebase.set(childRef = BASE_REF.child('d'), 'd');
+        return Firebase.push(array.get('baseRef'), 'd').then(function (ref) {
+          childRef = ref;
+        });
       });
 
       it('limits the length', function () {
@@ -149,7 +138,7 @@ describe('A Firebase.Array', function () {
 
       describe('and then removed', function () {
         beforeEach(function () {
-          return Firebase.set(childRef, null);
+          return Firebase.remove(childRef);
         });
 
         it('preserves the length', function () {

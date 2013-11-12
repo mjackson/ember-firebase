@@ -50,21 +50,11 @@ Firebase.get(myRef).then(function (value) {
 Firebase.push(myRef, 'myValue').then(function (childRef) {
   // childRef is a reference to the newly created child location
 });
+
+Firebase.remove(myRef).then(function (childRef) {
+  // childRef points to a null location
+});
 ```
-
-### Saving plain arrays
-
-Since there is no native support for arrays in Firebase, they must be converted to a slightly different format before they are sent to the Firebase servers. ember-firebase provides the `Array.prototype.toFirebaseValue` array method for easily converting to values that will automatically be interpreted as `Firebase.Array`s when they are read.
-
-```js
-Firebase.set(myRef, [ 1, 2, 3 ].toFirebaseValue())
-  .then(Firebase.get)
-  .then(function (value) {
-    // value is a Firebase.Array
-  });
-```
-
-Note: You can also use `Firebase.getArrayValue` if you don't want to extend the `Array` prototype.
 
 ### License
 

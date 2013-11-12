@@ -18,13 +18,18 @@
     <script src="lib/mocha-as-promised.js"></script>
     <script src="https://cdn.firebase.com/v0/firebase.js"></script>
 
-    <script>
-    // All tests will run against this ref, so make sure you
-    // don't have any data under it you can't afford to lose.
-    var BASE_REF = new Firebase('https://ember-firebase.firebaseio.com');
-    </script>
+    <!--
+    All tests will run against this ref, so make sure you
+    don't have any data under it you can't afford to lose.
+    -->
+    <script>var BASE_REF = new Firebase('https://ember-firebase.firebaseio.com');</script>
 
-    <!-- ember-firebase & tests -->
+    <!--
+    ember-firebase & tests
+
+    Note: All tests must be written in such a way that they
+    wait for a sync with the server before continuing.
+    -->
     <script src="../ember-firebase.js"></script>
     <script src="get-set-test.js"></script>
     <script src="proxy-test.js"></script>

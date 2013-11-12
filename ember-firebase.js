@@ -54,24 +54,31 @@
   };
 
   /**
-   * Converts the given array into an object that can be stored in a Firebase
-   * data structure and interpreted later by ember-firebase as a Firebase.Array.
+   * Removes the value at the given ref. Returns a promise that resolves to
+   * the ref when the sync is complete.
    */
-  Firebase.getArrayValue = function (array) {
-    var value = { _isArray: true };
-
-    forEach(array, function (object, index) {
-      value[index] = getFirebaseValue(object);
-    });
-
-    return value;
+  Firebase.remove = function (ref) {
+    return Firebase.set(ref, null);
   };
 
-  if (Ember.EXTEND_PROTOTYPES) {
-    Array.prototype.toFirebaseValue = function () {
-      return Firebase.getArrayValue(this);
-    };
-  }
+  /**
+   * Updates the value at the given ref with the given object. Returns a
+   * promise that resolves to the ref when the sync is complete.
+   */
+  Firebase.update = function (ref, object) {
+    var value = getFirebaseValue(object);
+    var deferred = RSVP.defer();
+
+    ref.update(value, function (error) {
+      if (error) {
+        deferred.reject(error);
+      } else {
+        deferred.resolve(ref);
+      }
+    });
+
+    return deferred.promise;
+  };
 
   /**
    * An Ember.Mixin for objects that are a proxy for a Firebase query
@@ -89,18 +96,22 @@
     ref: null,
 
     /**
-     * The writable Firebase location reference. This is only needed when
-     * the original ref is actually a query.
+     * The writable Firebase location reference that can be used to
+     * create child refs. This is only needed when the original ref
+     * is really a query.
      */
-    writableRef: Ember.computed(function () {
+    baseRef: Ember.computed(function () {
       var ref = get(this, 'ref');
-
-      if (ref && isFunction(ref.ref)) {
-        return ref.ref(); // ref is a query
-      }
-
-      return ref;
+      return isQuery(ref) ? ref.ref() : ref;
     }).property('ref'),
+
+    /**
+     * The Firebase URL for this proxy's location reference.
+     */
+    baseUrl: Ember.computed(function () {
+      var baseRef = get(this, 'baseRef');
+      return baseRef ? baseRef.toString() : 'none';
+    }).property('baseRef'),
 
     init: function () {
       this._super();
@@ -139,7 +150,59 @@
     childWasAdded: Ember.K,
     childWasChanged: Ember.K,
     childWasRemoved: Ember.K,
-    childWasMoved: Ember.K
+    childWasMoved: Ember.K,
+
+    /**
+     * Alters this proxy's ref to be limited to the given value.
+     * Returns this proxy.
+     *
+     * See https://www.firebase.com/docs/javascript/firebase/limit.html
+     */
+    limit: function (value) {
+      set(this, 'ref', get(this, 'ref').limit(value));
+      return this;
+    },
+
+    /**
+     * Alters this proxy's ref to start at the given priority and name.
+     * Returns this proxy.
+     *
+     * See https://www.firebase.com/docs/javascript/firebase/startat.html
+     */
+    startAt: function (priority, name) {
+      set(this, 'ref', get(this, 'ref').startAt(priority, name));
+      return this;
+    },
+
+    /**
+     * Alters this proxy's ref to end at the given priority and name.
+     * Returns this proxy.
+     *
+     * See https://www.firebase.com/docs/javascript/firebase/endat.html
+     */
+    endAt: function (priority, name) {
+      set(this, 'ref', get(this, 'ref').endAt(priority, name));
+      return this;
+    },
+
+    /**
+     * Creates a Firebase location reference to the child location with
+     * the given name. If the name is null or not defined a new location
+     * will be generated using push.
+     *
+     * See https://www.firebase.com/docs/javascript/firebase/child.html
+     * and https://www.firebase.com/docs/javascript/firebase/push.html
+     */
+    childRef: function (childName) {
+      var ref = get(this, 'baseRef');
+      Ember.assert(fmt('Cannot create child ref of %@, ref is missing', [ this ]), ref);
+
+      if (childName == null) {
+        return ref.push();
+      }
+
+      return ref.child(childName);
+    }
 
   });
 
@@ -169,10 +232,10 @@
      * instead, which propagates those changes to all listeners synchronously.
      */
     setUnknownProperty: function (property, object) {
-      var ref = get(this, 'writableRef');
+      var ref = get(this, 'baseRef');
       Ember.assert(fmt('Cannot set property %@ on %@, ref is missing', [ property, this ]), ref);
       ref.child(property).set(getFirebaseValue(object));
-      return get(this, property);
+      return object;
     },
 
     childWasAdded: function (snapshot) {
@@ -187,6 +250,20 @@
       return set(get(this, 'content'), snapshot.name(), undefined);
     },
 
+    /**
+     * Returns a new Firebase.Array created from this object's location.
+     */
+    toArray: function () {
+      return Firebase.Array.create({ ref: get(this, 'ref') });
+    },
+
+    /**
+     * Returns a string representation of this object.
+     */
+    toString: function () {
+      return fmt('<%@:%@>', [ get(this, 'constructor'), get(this, 'baseUrl') ]);
+    },
+
     toJSON: function () {
       var json = {};
 
@@ -196,10 +273,6 @@
       }
 
       return json;
-    },
-
-    toString: function () {
-      return fmt('<%@:%@>', [ get(this, 'constructor').toString(), get(this, 'writableRef').toString() ]);
     }
 
   });
@@ -214,16 +287,6 @@
 
   /**
    * An Ember.ArrayProxy that respects the ordering of a Firebase data structure.
-   * A Firebase.Array is able to be serialized and deserialized automatically. If
-   * you have a plain array that you need to save you can use the toFirebaseValue
-   * helper method on Array.prototype:
-   *
-   *   ref.set([ 1, 2, 3 ].toFirebaseValue());
-   *   Firebase.get(ref).then(function (value) {
-   *     // value is a Firebase.Array
-   *   });
-   *
-   * You can also use Firebase.getArrayValue if you're not extending prototypes.
    *
    * IMPORTANT: There is currently no way to reliably alter the ordering of an array
    * in a Firebase data structure. Thus, when you add objects to a Firebase.Array using
@@ -244,21 +307,12 @@
     init: function () {
       this._resetContent();
       this._super();
-      this._setupWritableRef();
     },
 
     _resetContent: Ember.beforeObserver(function () {
       set(this, 'content', Ember.A([]));
       this._names = [];
     }, 'ref'),
-
-    _setupWritableRef: Ember.observer(function () {
-      var ref = get(this, 'writableRef');
-
-      if (ref) {
-        ref.child('_isArray').set(true);
-      }
-    }, 'writableRef'),
 
     /**
      * A convenience method for unconditionally adding an object to this array,
@@ -268,11 +322,11 @@
      * See https://www.firebase.com/docs/ordered-data.html
      */
     pushObjectWithPriority: function (object, priority) {
-      var ref = get(this, 'writableRef');
-      Ember.assert(fmt('Cannot push object %@ to %@, ref is missing', [ object, this ]), ref);
+      var ref = get(this, 'baseRef');
+      Ember.assert(fmt('Cannot push object %@ on %@, ref is missing', [ object, this ]), ref);
 
-      var value = getFirebaseValue(object);
       var childRef = ref.push();
+      var value = getFirebaseValue(object);
 
       if (priority === undefined) {
         childRef.set(getFirebaseValue(object));
@@ -289,7 +343,7 @@
      * propagates those changes to all listeners synchronously.
      */
     replaceContent: function (index, amount, objects) {
-      var ref = get(this, 'writableRef');
+      var ref = get(this, 'baseRef');
       Ember.assert(fmt('Cannot replace content of %@, ref is missing', [ this ]), ref);
 
       // Remove objects that are being replaced.
@@ -310,21 +364,18 @@
     },
 
     childWasAdded: function (snapshot, previousName) {
-      if (snapshot.name() === '_isArray') return;
       var index = this._indexAfter(previousName);
       get(this, 'content').insertAt(index, getSnapshotValue(snapshot));
       this._names[index] = snapshot.name();
     },
 
     childWasChanged: function (snapshot, previousName) {
-      if (snapshot.name() === '_isArray') return;
       var index = this._indexAfter(previousName);
       get(this, 'content').replace(index, 1, [ getSnapshotValue(snapshot) ]);
       this._names[index] = snapshot.name();
     },
 
     childWasRemoved: function (snapshot) {
-      if (snapshot.name() === '_isArray') return;
       var index = this._names.indexOf(snapshot.name());
       if (index !== -1) {
         get(this, 'content').removeAt(index);
@@ -333,25 +384,34 @@
     },
 
     childWasMoved: function (snapshot, previousName) {
-      if (snapshot.name() === '_isArray') return;
       this.childWasRemoved(snapshot);
       this.childWasAdded(snapshot, previousName);
+    },
+
+    /**
+     * Returns a new Firebase.Object created from this array's location.
+     */
+    toObject: function () {
+      return Firebase.Object.create({ ref: get(this, 'ref') });
+    },
+
+    /**
+     * Returns a string representation of this object.
+     */
+    toString: function () {
+      return fmt('<%@:%@>', [ get(this, 'constructor'), get(this, 'baseUrl') ]);
     },
 
     toJSON: function () {
       var content = get(this, 'content');
       var names = this._names;
 
-      var json = { _isArray: true };
+      var json = {};
       for (var i = 0, len = names.length; i < len; ++i) {
         json[names[i]] = getFirebaseValue(content[i]);
       }
 
       return json;
-    },
-
-    toString: function () {
-      return fmt('<%@:%@>', [ get(this, 'constructor').toString(), get(this, 'writableRef').toString() ]);
     }
 
   });
@@ -371,10 +431,6 @@
    */
   function getSnapshotValue(snapshot) {
     if (snapshot.hasChildren()) {
-      if (snapshot.hasChild('_isArray')) {
-        return Firebase.Array.create({ ref: snapshot.ref() });
-      }
-
       return Firebase.Object.create({ ref: snapshot.ref() });
     }
 
@@ -387,6 +443,10 @@
    */
   function getFirebaseValue(object) {
     return object && isFunction(object.toJSON) ? object.toJSON() : object;
+  }
+
+  function isQuery(object) {
+    return object && isFunction(object.ref);
   }
 
   function isFunction(object) {
