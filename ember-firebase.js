@@ -92,7 +92,7 @@
      *
      * See https://www.firebase.com/docs/javascript/firebase/index.html
      */
-    ref: function () {
+    ref: Ember.computed(function () {
       var query = get(this, 'query');
 
       if (query instanceof Firebase) {
@@ -104,7 +104,7 @@
       }
 
       return null;
-    }.property('query'),
+    }).property('query'),
 
     init: function () {
       this._super();
@@ -115,7 +115,7 @@
       this._teardownQuery();
     },
 
-    _setupQuery: function () {
+    _setupQuery: Ember.observer(function () {
       var query = get(this, 'query');
 
       if (query) {
@@ -125,9 +125,9 @@
         query.on('child_removed', this.childWasRemoved, this);
         query.on('child_moved', this.childWasMoved, this);
       }
-    }.observes('query'),
+    }, 'query'),
 
-    _teardownQuery: function () {
+    _teardownQuery: Ember.beforeObserver(function () {
       var query = get(this, 'query');
 
       if (query) {
@@ -137,7 +137,7 @@
         query.off('child_removed', this.childWasRemoved);
         query.off('child_moved', this.childWasMoved);
       }
-    }.observesBefore('query'),
+    }, 'query'),
 
     valueDidChange: Ember.K,
     childWasAdded: Ember.K,
@@ -163,9 +163,9 @@
       this._super();
     },
 
-    _resetContent: function () {
+    _resetContent: Ember.beforeObserver(function () {
       set(this, 'content', {});
-    }.observesBefore('query'),
+    }, 'query'),
 
     /**
      * Ember.set uses this method to set properties on objects when the property
@@ -251,18 +251,18 @@
       this._setupRef();
     },
 
-    _resetContent: function () {
+    _resetContent: Ember.beforeObserver(function () {
       set(this, 'content', Ember.A([]));
       this._names = [];
-    }.observesBefore('query'),
+    }, 'query'),
 
-    _setupRef: function () {
+    _setupRef: Ember.observer(function () {
       var ref = get(this, 'ref');
 
       if (ref) {
         ref.child('_isArray').set(true);
       }
-    }.observes('ref'),
+    }, 'ref'),
 
     /**
      * A convenience method for unconditionally adding an object to this array,
