@@ -30,8 +30,8 @@ array.objectAt(0); // "myValue"
 array.clear();
 array.get('length'); // 0
 
-array.pushObjectWithPriority('second', 2);
-array.pushObjectWithPriority('first', 1);
+array.pushWithPriority('second', 2);
+array.pushWithPriority('first', 1);
 array.objectAt(0); // "first"
 array.objectAt(1); // "second"
 ```
