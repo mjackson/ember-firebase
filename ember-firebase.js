@@ -246,7 +246,7 @@
     },
 
     /**
-     * Returns a new Firebase.Array created from this object's location.
+     * Returns a new Firebase.Array created from this object's location reference.
      */
     toArray: function () {
       return Firebase.Array.create({ ref: get(this, 'ref') });
@@ -259,6 +259,9 @@
       return fmt('<%@:%@>', [ get(this, 'constructor'), get(this, 'baseUrl') ]);
     },
 
+    /**
+     * Returns a plain JavaScript object representation of this object.
+     */
     toJSON: function () {
       var json = {};
 
@@ -384,19 +387,22 @@
     },
 
     /**
-     * Returns a new Firebase.Object created from this array's location.
+     * Returns a new Firebase.Object created from this array's location reference.
      */
     toObject: function () {
       return Firebase.Object.create({ ref: get(this, 'ref') });
     },
 
     /**
-     * Returns a string representation of this object.
+     * Returns a string representation of this array.
      */
     toString: function () {
       return fmt('<%@:%@>', [ get(this, 'constructor'), get(this, 'baseUrl') ]);
     },
 
+    /**
+     * Returns a plain JavaScript object representation of this array.
+     */
     toJSON: function () {
       var content = get(this, 'content');
       var names = this._names;
@@ -420,9 +426,8 @@
   });
 
   /**
-   * Returns the value of the given Firebase snapshot as a JavaScript object,
-   * automatically handling conversion to Firebase.Object and Firebase.Array
-   * objects for locations that have children.
+   * The default function used to coerce the value from a snapshot. Returns a
+   * Firebase.Object for snapshots with children, the plain value otherwise.
    */
   function getSnapshotValue(snapshot) {
     if (snapshot.hasChildren()) {
