@@ -244,7 +244,21 @@
     setUnknownProperty: function (property, object) {
       var ref = get(this, 'baseRef');
       Ember.assert(fmt('Cannot set property %@ on %@, ref is missing', [ property, this ]), ref);
+
       ref.child(property).set(getFirebaseValue(object));
+
+      return object;
+    },
+
+    /**
+     * A convenience method for setting a property value with the given priority.
+     */
+    setWithPriority: function (property, object, priority) {
+      var ref = get(this, 'baseRef');
+      Ember.assert(fmt('Cannot set property %@ on %@, ref is missing', [ property, this ]), ref);
+
+      ref.child(property).setWithPriority(getFirebaseValue(object), priority);
+
       return object;
     },
 

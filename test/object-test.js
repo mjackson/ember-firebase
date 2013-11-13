@@ -97,4 +97,14 @@ describe('A Firebase.Object', function () {
     });
   });
 
+  describe('setWithPriority', function () {
+    beforeEach(function () {
+      object.setWithPriority('key', 'value', 5);
+    });
+
+    it('gets the correct value', function () {
+      expect(object.get('key')).to.equal('value');
+    });
+  });
+
 });
