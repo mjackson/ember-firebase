@@ -222,14 +222,14 @@
     }, 'ref'),
 
     // A hook that subclasses can use to coerce the value from a snapshot.
-    _makeValue: getSnapshotValue,
+    createValueFromSnapshot: getSnapshotValue,
 
     childWasAdded: function (snapshot) {
-      set(get(this, 'content'), snapshot.name(), this._makeValue(snapshot));
+      set(get(this, 'content'), snapshot.name(), this.createValueFromSnapshot(snapshot));
     },
 
     childWasChanged: function (snapshot) {
-      set(get(this, 'content'), snapshot.name(), this._makeValue(snapshot));
+      set(get(this, 'content'), snapshot.name(), this.createValueFromSnapshot(snapshot));
     },
 
     childWasRemoved: function (snapshot) {
@@ -330,7 +330,7 @@
     }, 'ref'),
 
     // A hook that subclasses can use to coerce the value from a snapshot.
-    _makeValue: getSnapshotValue,
+    createValueFromSnapshot: getSnapshotValue,
 
     _indexAfter: function (name) {
       return name ? this._names.indexOf(name) + 1 : 0;
@@ -338,13 +338,13 @@
 
     childWasAdded: function (snapshot, previousName) {
       var index = this._indexAfter(previousName);
-      get(this, 'content').insertAt(index, this._makeValue(snapshot));
+      get(this, 'content').insertAt(index, this.createValueFromSnapshot(snapshot));
       this._names[index] = snapshot.name();
     },
 
     childWasChanged: function (snapshot, previousName) {
       var index = this._indexAfter(previousName);
-      get(this, 'content').replace(index, 1, [ this._makeValue(snapshot) ]);
+      get(this, 'content').replace(index, 1, [ this.createValueFromSnapshot(snapshot) ]);
       this._names[index] = snapshot.name();
     },
 
