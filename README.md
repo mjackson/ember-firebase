@@ -2,41 +2,49 @@ ember-firebase is a stable, [thoroughly-tested](https://github.com/mjijackson/em
 
 ### Usage
 
-ember-firebase includes support both for objects and arrays.
+ember-firebase includes two subclasses that let you manipulate a Firebase location reference in two different styles, depending on how you intend to use your data. `Firebase.Hash` is an `Ember.ObjectProxy` and `Firebase.List` is an `Ember.ArrayProxy`. Use `Firebase.Hash` when you are storing key/value-style data at a location reference, and `Firebase.List` when you're storing array-like data.
 
 ```js
 var myRef = new Firebase('https://ember-firebase.firebaseio.com');
 
-var object = Firebase.Hash.create({ ref: myRef });
+var hash = Firebase.Hash.create({ ref: myRef });
 
-object.set('myKey', 'myValue');
-object.get('myKey'); // "myValue"
+hash.set('myKey', 'myValue');
+hash.get('myKey'); // "myValue"
 
-object.set('myKey', { my: 'value' });
-object.get('myKey'); // Firebase.Hash
+hash.set('myKey', { my: 'value' });
+hash.get('myKey'); // Firebase.Hash
 
-object.set('myKey', [ 1, 2, 3 ].toFirebaseValue());
-object.get('myKey'); // Firebase.List
+hash.set('myKey', [ 1, 2, 3 ].toFirebaseValue());
+hash.get('myKey'); // Firebase.List
 
-object.set('myKey', [ 1, 2, 3 ]);
-object.get('myKey'); // Firebase.Hash
+hash.set('myKey', [ 1, 2, 3 ]);
+hash.get('myKey'); // Firebase.Hash
 
-var array = Firebase.List.create({ ref: myRef });
+var list = Firebase.List.create({ ref: myRef });
 
-array.addObject('myValue');
-array.get('length'); // 1
-array.objectAt(0); // "myValue"
+list.addObject('myValue');
+list.get('length'); // 1
+list.objectAt(0); // "myValue"
 
-array.clear();
-array.get('length'); // 0
+list.clear();
+list.get('length'); // 0
 
-array.pushWithPriority('second', 2);
-array.pushWithPriority('first', 1);
-array.objectAt(0); // "first"
-array.objectAt(1); // "second"
+list.pushWithPriority('second', 2);
+list.pushWithPriority('first', 1);
+list.objectAt(0); // "first"
+list.objectAt(1); // "second"
 ```
 
-It also includes several utility methods that make it convenient to get/set values in Firebase.
+You can convert easily between hashes and lists.
+
+```js
+var hash = Firebase.Hash.create({ ref: myRef });
+var list = hash.toList();
+var duplicateHash = list.toHash();
+```
+
+ember-firebase also includes several utility methods that make it convenient to get/set values at specific location references. These methods all return promises that are resolved once the sync with the Firebase servers is complete.
 
 ```js
 Firebase.set(myRef, 'myValue').then(function () {
