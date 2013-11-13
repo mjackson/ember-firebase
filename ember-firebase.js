@@ -311,7 +311,7 @@
    *
    * If you need to enforce your own ordering you must use Firebase's priority feature.
    * You can either use the setWithPriority method directly on a child of this array's
-   * location reference, or use pushObjectWithPriority.
+   * location reference, or use pushWithPriority.
    *
    * For more information on how Firebase stores ordered data and priorities, see
    * https://www.firebase.com/docs/managing-lists.html and
@@ -384,26 +384,18 @@
     },
 
     /**
-     * A convenience method for unconditionally adding an object to this array,
-     * optionally with the given priority. Returns the newly generated Firebase
-     * location reference.
+     * A convenience method for unconditionally adding an object to this array
+     * with the given priority.
      *
      * See https://www.firebase.com/docs/ordered-data.html
      */
-    pushObjectWithPriority: function (object, priority) {
+    pushWithPriority: function (object, priority) {
       var ref = get(this, 'baseRef');
       Ember.assert(fmt('Cannot push object %@ on %@, ref is missing', [ object, this ]), ref);
 
-      var childRef = ref.push();
-      var value = getFirebaseValue(object);
+      ref.push().setWithPriority(getFirebaseValue(object), priority);
 
-      if (priority === undefined) {
-        childRef.set(getFirebaseValue(object));
-      } else {
-        childRef.setWithPriority(getFirebaseValue(object), priority);
-      }
-
-      return childRef;
+      return object;
     },
 
     /**

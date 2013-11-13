@@ -75,7 +75,7 @@ describe('A Firebase.Array', function () {
       objects = [ 'd', 'e', 'f' ];
 
       objects.forEach(function (object, index) {
-        array.pushObjectWithPriority(object, index + 1);
+        array.pushWithPriority(object, index + 1);
       });
     });
 
@@ -148,14 +148,11 @@ describe('A Firebase.Array', function () {
     });
   });
 
-  describe('pushObjectWithPriority', function () {
-    var returnValues;
+  describe('pushWithPriority', function () {
     beforeEach(function () {
-      returnValues = [
-        array.pushObjectWithPriority(1, 1),
-        array.pushObjectWithPriority(1, 2),
-        array.pushObjectWithPriority(2, 0)
-      ];
+      array.pushWithPriority(1, 1);
+      array.pushWithPriority(1, 2);
+      array.pushWithPriority(2, 0);
     });
 
     it('unconditionally adds objects', function () {
@@ -164,12 +161,6 @@ describe('A Firebase.Array', function () {
 
     it('adds objects in the correct order', function () {
       expect(array.get('firstObject')).to.equal(2);
-    });
-
-    it('returns a Firebase location reference', function () {
-      returnValues.forEach(function (value) {
-        expect(value).to.be.instanceof(Firebase);
-      });
     });
   });
 
