@@ -1,25 +1,25 @@
-describe('Firebase.Array', function () {
+describe('Firebase.List', function () {
   it('has the correct string representation', function () {
-    expect(Firebase.Array + '').to.equal('Firebase.Array');
+    expect(Firebase.List + '').to.equal('Firebase.List');
   });
 });
 
-describe('A Firebase.Array', function () {
+describe('A Firebase.List', function () {
 
-  var array;
+  var list;
   beforeEach(function () {
-    array = Firebase.Array.create({ ref: BASE_REF });
+    list = Firebase.List.create({ ref: BASE_REF });
     return Firebase.set(BASE_REF, null);
   });
 
   it('has the correct string representation', function () {
-    expect(array + '').to.include('Firebase.Array');
-    expect(array + '').to.include(array.get('baseUrl'));
+    expect(list + '').to.include('Firebase.List');
+    expect(list + '').to.include(list.get('baseUrl'));
   });
 
   describe('with no objects', function () {
     it('has length 0', function () {
-      expect(array.get('length')).to.equal(0);
+      expect(list.get('length')).to.equal(0);
     });
   });
 
@@ -27,26 +27,26 @@ describe('A Firebase.Array', function () {
     var objects;
     beforeEach(function () {
       objects = [ 1, 2, 3 ];
-      array.addObjects(objects);
+      list.addObjects(objects);
     });
 
     it('has the correct length', function () {
-      expect(array.get('length')).to.equal(objects.length);
+      expect(list.get('length')).to.equal(objects.length);
     });
 
     it('contains all objects', function () {
       objects.forEach(function (object) {
-        expect(array.contains(object)).to.equal(true);
+        expect(list.contains(object)).to.equal(true);
       });
     });
 
     describe('when cleared', function () {
       beforeEach(function () {
-        array.clear();
+        list.clear();
       });
 
       it('has length 0', function () {
-        expect(array.get('length')).to.equal(0);
+        expect(list.get('length')).to.equal(0);
       });
     });
   });
@@ -55,16 +55,16 @@ describe('A Firebase.Array', function () {
     var objects;
     beforeEach(function () {
       objects = [ 'a', 'b', 'c' ];
-      array.pushObjects(objects);
+      list.pushObjects(objects);
     });
 
     it('has the correct length', function () {
-      expect(array.get('length')).to.equal(objects.length);
+      expect(list.get('length')).to.equal(objects.length);
     });
 
     it('contains the objects in order', function () {
       objects.forEach(function (object, index) {
-        expect(array.objectAt(index)).to.equal(object);
+        expect(list.objectAt(index)).to.equal(object);
       });
     });
   });
@@ -75,40 +75,40 @@ describe('A Firebase.Array', function () {
       objects = [ 'd', 'e', 'f' ];
 
       objects.forEach(function (object, index) {
-        array.pushWithPriority(object, index + 1);
+        list.pushWithPriority(object, index + 1);
       });
     });
 
     it('has the correct length', function () {
-      expect(array.get('length')).to.equal(objects.length);
+      expect(list.get('length')).to.equal(objects.length);
     });
 
     it('contains the objects in order', function () {
       objects.forEach(function (object, index) {
-        expect(array.objectAt(index)).to.equal(object);
+        expect(list.objectAt(index)).to.equal(object);
       });
     });
 
     describe('when a priority changes', function () {
       beforeEach(function () {
-        return Firebase.set(array.childRef(objects[0]), objects[0], objects.length + 1);
+        return Firebase.set(list.childRef(objects[0]), objects[0], objects.length + 1);
       });
 
       it('preserves the correct order', function () {
-        expect(array.get('lastObject')).to.equal(objects[0]);
+        expect(list.get('lastObject')).to.equal(objects[0]);
       });
     });
 
     describe('when a new object is inserted at a lower priority than all others', function () {
       beforeEach(function () {
-        return Firebase.set(array.childRef('g'), 'g', 0);
+        return Firebase.set(list.childRef('g'), 'g', 0);
       });
 
       it('preserves the correct order', function () {
-        expect(array.objectAt(0)).to.equal('g');
-        expect(array.objectAt(1)).to.equal('d');
-        expect(array.objectAt(2)).to.equal('e');
-        expect(array.objectAt(3)).to.equal('f');
+        expect(list.objectAt(0)).to.equal('g');
+        expect(list.objectAt(1)).to.equal('d');
+        expect(list.objectAt(2)).to.equal('e');
+        expect(list.objectAt(3)).to.equal('f');
       });
     });
   });
@@ -117,23 +117,23 @@ describe('A Firebase.Array', function () {
     var limit, objects;
     beforeEach(function () {
       objects = [ 'a', 'b', 'c' ];
-      array.limit(limit = 3).pushObjects(objects);
+      list.limit(limit = 3).pushObjects(objects);
     });
 
     it('has the correct length', function () {
-      expect(array.get('length')).to.equal(objects.length);
+      expect(list.get('length')).to.equal(objects.length);
     });
 
     describe('when an object is added', function () {
       var childRef;
       beforeEach(function () {
-        return Firebase.push(array.get('baseRef'), 'd').then(function (ref) {
+        return Firebase.push(list.get('baseRef'), 'd').then(function (ref) {
           childRef = ref;
         });
       });
 
       it('limits the length', function () {
-        expect(array.get('length')).to.equal(limit);
+        expect(list.get('length')).to.equal(limit);
       });
 
       describe('and then removed', function () {
@@ -142,7 +142,7 @@ describe('A Firebase.Array', function () {
         });
 
         it('preserves the length', function () {
-          expect(array.get('length')).to.equal(objects.length);
+          expect(list.get('length')).to.equal(objects.length);
         });
       });
     });
@@ -150,17 +150,17 @@ describe('A Firebase.Array', function () {
 
   describe('pushWithPriority', function () {
     beforeEach(function () {
-      array.pushWithPriority(1, 1);
-      array.pushWithPriority(1, 2);
-      array.pushWithPriority(2, 0);
+      list.pushWithPriority(1, 1);
+      list.pushWithPriority(1, 2);
+      list.pushWithPriority(2, 0);
     });
 
     it('unconditionally adds objects', function () {
-      expect(array.get('length')).to.equal(3);
+      expect(list.get('length')).to.equal(3);
     });
 
     it('adds objects in the correct order', function () {
-      expect(array.get('firstObject')).to.equal(2);
+      expect(list.get('firstObject')).to.equal(2);
     });
   });
 

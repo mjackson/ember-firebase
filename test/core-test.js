@@ -38,12 +38,12 @@ describe('Firebase.get and Firebase.set', function () {
       });
     });
 
-    it('returns a Firebase.Object', function () {
-      expect(result).to.be.instanceof(Firebase.Object);
+    it('returns a Firebase.Hash', function () {
+      expect(result).to.be.instanceof(Firebase.Hash);
     });
 
-    it('returns a Firebase.Object for a nested object', function () {
-      expect(result.get('myObject')).to.be.instanceof(Firebase.Object);
+    it('returns a Firebase.Hash for a nested object', function () {
+      expect(result.get('myObject')).to.be.instanceof(Firebase.Hash);
     });
   });
 
@@ -52,8 +52,8 @@ describe('Firebase.get and Firebase.set', function () {
       return setupValue([ 1, 2, 3 ]);
     });
 
-    it('returns a Firebase.Object', function () {
-      expect(result).to.be.instanceof(Firebase.Object);
+    it('returns a Firebase.Hash', function () {
+      expect(result).to.be.instanceof(Firebase.Hash);
     });
   });
 
@@ -75,8 +75,8 @@ describe('Firebase.update', function () {
       return setupValue({ a: 'b', c: 'd' });
     });
 
-    it('returns a Firebase.Object', function () {
-      expect(result).to.be.instanceof(Firebase.Object);
+    it('returns a Firebase.Hash', function () {
+      expect(result).to.be.instanceof(Firebase.Hash);
     });
 
     it('reflects the updated values', function () {
@@ -89,8 +89,8 @@ describe('Firebase.update', function () {
         return setupValue({ a: 'z' });
       });
 
-      it('returns a Firebase.Object', function () {
-        expect(result).to.be.instanceof(Firebase.Object);
+      it('returns a Firebase.Hash', function () {
+        expect(result).to.be.instanceof(Firebase.Hash);
       });
 
       it('preserves old values', function () {

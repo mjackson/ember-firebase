@@ -7,21 +7,21 @@ ember-firebase includes support both for objects and arrays.
 ```js
 var myRef = new Firebase('https://ember-firebase.firebaseio.com');
 
-var object = Firebase.Object.create({ ref: myRef });
+var object = Firebase.Hash.create({ ref: myRef });
 
 object.set('myKey', 'myValue');
 object.get('myKey'); // "myValue"
 
 object.set('myKey', { my: 'value' });
-object.get('myKey'); // Firebase.Object
+object.get('myKey'); // Firebase.Hash
 
 object.set('myKey', [ 1, 2, 3 ].toFirebaseValue());
-object.get('myKey'); // Firebase.Array
+object.get('myKey'); // Firebase.List
 
 object.set('myKey', [ 1, 2, 3 ]);
-object.get('myKey'); // Firebase.Object
+object.get('myKey'); // Firebase.Hash
 
-var array = Firebase.Array.create({ ref: myRef });
+var array = Firebase.List.create({ ref: myRef });
 
 array.addObject('myValue');
 array.get('length'); // 1

@@ -1,19 +1,19 @@
-describe('Firebase.Object', function () {
+describe('Firebase.Hash', function () {
   it('has the correct string representation', function () {
-    expect(Firebase.Object + '').to.equal('Firebase.Object');
+    expect(Firebase.Hash + '').to.equal('Firebase.Hash');
   });
 });
 
-describe('A Firebase.Object', function () {
+describe('A Firebase.Hash', function () {
 
   var object;
   beforeEach(function () {
-    object = Firebase.Object.create({ ref: BASE_REF });
+    object = Firebase.Hash.create({ ref: BASE_REF });
     return Firebase.set(BASE_REF, null);
   });
 
   it('has the correct string representation', function () {
-    expect(object + '').to.include('Firebase.Object');
+    expect(object + '').to.include('Firebase.Hash');
     expect(object + '').to.include(object.get('baseUrl'));
   });
 
@@ -39,8 +39,8 @@ describe('A Firebase.Object', function () {
         object.set('key', { a: 'b', c: 'd' });
       });
 
-      it('gets a Firebase.Object', function () {
-        expect(object.get('key')).to.be.instanceof(Firebase.Object);
+      it('gets a Firebase.Hash', function () {
+        expect(object.get('key')).to.be.instanceof(Firebase.Hash);
       });
     });
 
@@ -49,18 +49,19 @@ describe('A Firebase.Object', function () {
         object.set('key', [ 1, 2, 3 ]);
       });
 
-      it('gets a Firebase.Object', function () {
-        expect(object.get('key')).to.be.instanceof(Firebase.Object);
+      it('gets a Firebase.Hash', function () {
+        expect(object.get('key')).to.be.instanceof(Firebase.Hash);
       });
 
-      describe('when converted to an array', function () {
+      describe('when converted to a list', function () {
+        var list;
         beforeEach(function () {
-          object = object.toArray();
+          list = object.toList();
         });
 
-        it('becomes a Firebase.Array with the correct length', function () {
-          expect(object).to.be.instanceof(Firebase.Array);
-          expect(object.get('length')).to.equal(1);
+        it('becomes a Firebase.List with the correct length', function () {
+          expect(list).to.be.instanceof(Firebase.List);
+          expect(list.get('length')).to.equal(1);
         });
       });
     });

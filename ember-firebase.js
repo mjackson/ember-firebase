@@ -210,7 +210,7 @@
    *
    * See https://www.firebase.com/docs/data-structure.html
    */
-  Firebase.Object = Ember.ObjectProxy.extend(Firebase.Proxy, {
+  Firebase.Hash = Ember.ObjectProxy.extend(Firebase.Proxy, {
 
     init: function () {
       this._resetContent();
@@ -221,7 +221,19 @@
       set(this, 'content', {});
     }, 'ref'),
 
-    // A hook that subclasses can use to coerce the value from a snapshot.
+    /**
+     * Returns true if this hash has a child with the given name.
+     *
+     * Note: This method only checks local values. Thus it may not be
+     * accurate when using a query to filter the data.
+     */
+    hasChild: function (childName) {
+      return (childName in get(this, 'content'));
+    },
+
+    /**
+     * A hook that subclasses can use to coerce the value from a snapshot.
+     */
     createValueFromSnapshot: getSnapshotValue,
 
     childWasAdded: function (snapshot) {
@@ -263,21 +275,21 @@
     },
 
     /**
-     * Returns a new Firebase.Array created from this object's location reference.
+     * Returns a new Firebase.List created from this hash's location reference.
      */
-    toArray: function () {
-      return Firebase.Array.create({ ref: get(this, 'ref') });
+    toList: function () {
+      return Firebase.List.create({ ref: get(this, 'ref') });
     },
 
     /**
-     * Returns a string representation of this object.
+     * Returns a string representation of this hash.
      */
     toString: function () {
       return fmt('<%@:%@>', [ get(this, 'constructor'), get(this, 'baseUrl') ]);
     },
 
     /**
-     * Returns a plain JavaScript object representation of this object.
+     * Returns a plain JavaScript object representation of this hash.
      */
     toJSON: function () {
       var json = {};
@@ -292,10 +304,10 @@
 
   });
 
-  Firebase.Object.reopenClass({
+  Firebase.Hash.reopenClass({
 
     toString: function () {
-      return 'Firebase.Object';
+      return 'Firebase.Hash';
     }
 
   });
@@ -304,20 +316,20 @@
    * An Ember.ArrayProxy that respects the ordering of a Firebase data structure.
    *
    * IMPORTANT: There is currently no way to reliably alter the ordering of an array
-   * in a Firebase data structure. Thus, when you add objects to a Firebase.Array using
+   * in a Firebase data structure. Thus, when you add objects to a Firebase.List using
    * Ember.MutableArray's methods (e.g. insertAt, unshiftObject, etc.) you will not
-   * see that ordering in the array. Instead, all objects added to an array are
-   * simply pushed onto it.
+   * see that ordering in the list. Instead, all objects added to a list are simply
+   * appended to the end.
    *
    * If you need to enforce your own ordering you must use Firebase's priority feature.
-   * You can either use the setWithPriority method directly on a child of this array's
+   * You can either use the setWithPriority method directly on a child of this list's
    * location reference, or use pushWithPriority.
    *
    * For more information on how Firebase stores ordered data and priorities, see
    * https://www.firebase.com/docs/managing-lists.html and
    * https://www.firebase.com/docs/ordered-data.html
    */
-  Firebase.Array = Ember.ArrayProxy.extend(Firebase.Proxy, {
+  Firebase.List = Ember.ArrayProxy.extend(Firebase.Proxy, {
 
     init: function () {
       this._resetContent();
@@ -329,7 +341,19 @@
       this._names = [];
     }, 'ref'),
 
-    // A hook that subclasses can use to coerce the value from a snapshot.
+    /**
+     * Returns true if this list has a child with the given name.
+     *
+     * Note: This method only checks local values. Thus it may not be
+     * accurate when using a query to filter the data.
+     */
+    hasChild: function (childName) {
+      return this._names.indexOf(childName) !== -1;
+    },
+
+    /**
+     * A hook that subclasses can use to coerce the value from a snapshot.
+     */
     createValueFromSnapshot: getSnapshotValue,
 
     _indexAfter: function (name) {
@@ -384,7 +408,7 @@
     },
 
     /**
-     * A convenience method for unconditionally adding an object to this array
+     * A convenience method for unconditionally adding an object to this list
      * with the given priority.
      *
      * See https://www.firebase.com/docs/ordered-data.html
@@ -399,21 +423,21 @@
     },
 
     /**
-     * Returns a new Firebase.Object created from this array's location reference.
+     * Returns a new Firebase.Hash created from this list's location reference.
      */
-    toObject: function () {
-      return Firebase.Object.create({ ref: get(this, 'ref') });
+    toHash: function () {
+      return Firebase.Hash.create({ ref: get(this, 'ref') });
     },
 
     /**
-     * Returns a string representation of this array.
+     * Returns a string representation of this list.
      */
     toString: function () {
       return fmt('<%@:%@>', [ get(this, 'constructor'), get(this, 'baseUrl') ]);
     },
 
     /**
-     * Returns a plain JavaScript object representation of this array.
+     * Returns a plain JavaScript object representation of this list.
      */
     toJSON: function () {
       var content = get(this, 'content');
@@ -429,21 +453,21 @@
 
   });
 
-  Firebase.Array.reopenClass({
+  Firebase.List.reopenClass({
 
     toString: function () {
-      return 'Firebase.Array';
+      return 'Firebase.List';
     }
 
   });
 
   /**
    * The default function used to coerce the value from a snapshot. Returns a
-   * Firebase.Object for snapshots with children, the plain value otherwise.
+   * Firebase.Hash for snapshots with children, the plain value otherwise.
    */
   function getSnapshotValue(snapshot) {
     if (snapshot.hasChildren()) {
-      return Firebase.Object.create({ ref: snapshot.ref() });
+      return Firebase.Hash.create({ ref: snapshot.ref() });
     }
 
     return snapshot.val();
