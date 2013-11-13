@@ -196,12 +196,7 @@
     childRef: function (childName) {
       var ref = get(this, 'baseRef');
       Ember.assert(fmt('Cannot create child ref of %@, ref is missing', [ this ]), ref);
-
-      if (childName == null) {
-        return ref.push();
-      }
-
-      return ref.child(childName);
+      return childName == null ? ref.push() : ref.child(childName);
     }
 
   });
