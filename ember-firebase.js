@@ -221,6 +221,21 @@
       set(this, 'content', {});
     }, 'ref'),
 
+    // A hook that subclasses can use to coerce the value from a snapshot.
+    _makeValue: getSnapshotValue,
+
+    childWasAdded: function (snapshot) {
+      set(get(this, 'content'), snapshot.name(), this._makeValue(snapshot));
+    },
+
+    childWasChanged: function (snapshot) {
+      set(get(this, 'content'), snapshot.name(), this._makeValue(snapshot));
+    },
+
+    childWasRemoved: function (snapshot) {
+      set(get(this, 'content'), snapshot.name(), undefined);
+    },
+
     /**
      * Ember.set uses this method to set properties on objects when the property
      * is not already present. We use it to set values on the underlying ref
@@ -231,18 +246,6 @@
       Ember.assert(fmt('Cannot set property %@ on %@, ref is missing', [ property, this ]), ref);
       ref.child(property).set(getFirebaseValue(object));
       return object;
-    },
-
-    childWasAdded: function (snapshot) {
-      set(get(this, 'content'), snapshot.name(), getSnapshotValue(snapshot));
-    },
-
-    childWasChanged: function (snapshot) {
-      set(get(this, 'content'), snapshot.name(), getSnapshotValue(snapshot));
-    },
-
-    childWasRemoved: function (snapshot) {
-      set(get(this, 'content'), snapshot.name(), undefined);
     },
 
     /**
@@ -312,27 +315,36 @@
       this._names = [];
     }, 'ref'),
 
-    /**
-     * A convenience method for unconditionally adding an object to this array,
-     * optionally with the given priority. Returns the newly generated Firebase
-     * location reference.
-     *
-     * See https://www.firebase.com/docs/ordered-data.html
-     */
-    pushObjectWithPriority: function (object, priority) {
-      var ref = get(this, 'baseRef');
-      Ember.assert(fmt('Cannot push object %@ on %@, ref is missing', [ object, this ]), ref);
+    // A hook that subclasses can use to coerce the value from a snapshot.
+    _makeValue: getSnapshotValue,
 
-      var childRef = ref.push();
-      var value = getFirebaseValue(object);
+    _indexAfter: function (name) {
+      return name ? this._names.indexOf(name) + 1 : 0;
+    },
 
-      if (priority === undefined) {
-        childRef.set(getFirebaseValue(object));
-      } else {
-        childRef.setWithPriority(getFirebaseValue(object), priority);
+    childWasAdded: function (snapshot, previousName) {
+      var index = this._indexAfter(previousName);
+      get(this, 'content').insertAt(index, this._makeValue(snapshot));
+      this._names[index] = snapshot.name();
+    },
+
+    childWasChanged: function (snapshot, previousName) {
+      var index = this._indexAfter(previousName);
+      get(this, 'content').replace(index, 1, [ this._makeValue(snapshot) ]);
+      this._names[index] = snapshot.name();
+    },
+
+    childWasRemoved: function (snapshot) {
+      var index = this._names.indexOf(snapshot.name());
+      if (index !== -1) {
+        get(this, 'content').removeAt(index);
+        this._names.splice(index, 1);
       }
+    },
 
-      return childRef;
+    childWasMoved: function (snapshot, previousName) {
+      this.childWasRemoved(snapshot);
+      this.childWasAdded(snapshot, previousName);
     },
 
     /**
@@ -357,33 +369,27 @@
       });
     },
 
-    _indexAfter: function (name) {
-      return name ? this._names.indexOf(name) + 1 : 0;
-    },
+    /**
+     * A convenience method for unconditionally adding an object to this array,
+     * optionally with the given priority. Returns the newly generated Firebase
+     * location reference.
+     *
+     * See https://www.firebase.com/docs/ordered-data.html
+     */
+    pushObjectWithPriority: function (object, priority) {
+      var ref = get(this, 'baseRef');
+      Ember.assert(fmt('Cannot push object %@ on %@, ref is missing', [ object, this ]), ref);
 
-    childWasAdded: function (snapshot, previousName) {
-      var index = this._indexAfter(previousName);
-      get(this, 'content').insertAt(index, getSnapshotValue(snapshot));
-      this._names[index] = snapshot.name();
-    },
+      var childRef = ref.push();
+      var value = getFirebaseValue(object);
 
-    childWasChanged: function (snapshot, previousName) {
-      var index = this._indexAfter(previousName);
-      get(this, 'content').replace(index, 1, [ getSnapshotValue(snapshot) ]);
-      this._names[index] = snapshot.name();
-    },
-
-    childWasRemoved: function (snapshot) {
-      var index = this._names.indexOf(snapshot.name());
-      if (index !== -1) {
-        get(this, 'content').removeAt(index);
-        this._names.splice(index, 1);
+      if (priority === undefined) {
+        childRef.set(getFirebaseValue(object));
+      } else {
+        childRef.setWithPriority(getFirebaseValue(object), priority);
       }
-    },
 
-    childWasMoved: function (snapshot, previousName) {
-      this.childWasRemoved(snapshot);
-      this.childWasAdded(snapshot, previousName);
+      return childRef;
     },
 
     /**
