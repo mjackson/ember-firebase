@@ -102,7 +102,7 @@
      */
     baseRef: Ember.computed(function () {
       var ref = get(this, 'ref');
-      return isQuery(ref) ? ref.ref() : ref;
+      return isFirebaseQuery(ref) ? ref.ref() : ref;
     }).property('ref'),
 
     /**
@@ -403,7 +403,7 @@
       forEach(objects, function (object) {
         // TODO: Is there any way we can add the objects
         // at the given index instead of just using push?
-        ref.push(getFirebaseValue(object));
+        ref.push().set(getFirebaseValue(object));
       });
     },
 
@@ -481,7 +481,7 @@
     return object && isFunction(object.toJSON) ? object.toJSON() : object;
   }
 
-  function isQuery(object) {
+  function isFirebaseQuery(object) {
     return object && isFunction(object.ref);
   }
 
