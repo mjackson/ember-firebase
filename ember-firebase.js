@@ -187,8 +187,11 @@
 
     /**
      * Creates a Firebase location reference to the child location with
-     * the given name. If the name is null or not defined a new location
-     * will be generated using push.
+     * the given name. If the name is not given a new location is generated
+     * using push(). If it is given, it may contain a string format that will
+     * use all remaining arguments.
+     *
+     *   proxy.childRef('chats/%@/messages', chat.id);
      *
      * See https://www.firebase.com/docs/javascript/firebase/child.html
      * and https://www.firebase.com/docs/javascript/firebase/push.html
@@ -196,7 +199,12 @@
     childRef: function (childName) {
       var ref = get(this, 'baseRef');
       Ember.assert(fmt('Cannot create child ref of %@, ref is missing', [ this ]), ref);
-      return childName == null ? ref.push() : ref.child(childName);
+
+      if (childName == null) {
+        return ref.push();
+      }
+
+      return ref.child(fmt(childName, [].slice.call(arguments, 1)));
     }
 
   });
