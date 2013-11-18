@@ -126,7 +126,6 @@
       var ref = get(this, 'ref');
 
       if (ref) {
-        ref.on('value', this.valueDidChange, this);
         ref.on('child_added', this.childWasAdded, this);
         ref.on('child_changed', this.childWasChanged, this);
         ref.on('child_removed', this.childWasRemoved, this);
@@ -138,7 +137,6 @@
       var ref = get(this, 'ref');
 
       if (ref) {
-        ref.off('value', this.valueDidChange);
         ref.off('child_added', this.childWasAdded);
         ref.off('child_changed', this.childWasChanged);
         ref.off('child_removed', this.childWasRemoved);
@@ -146,7 +144,6 @@
       }
     }, 'ref'),
 
-    valueDidChange: Ember.K,
     childWasAdded: Ember.K,
     childWasChanged: Ember.K,
     childWasRemoved: Ember.K,
