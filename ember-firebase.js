@@ -81,8 +81,8 @@
   };
 
   /**
-   * An Ember.Mixin for objects that are a proxy for a Firebase query
-   * or location reference.
+   * An Ember.Mixin for objects that are a proxy for a Firebase location
+   * reference (or query).
    */
   Firebase.Proxy = Ember.Mixin.create({
 
@@ -110,7 +110,7 @@
      */
     baseUrl: Ember.computed(function () {
       var baseRef = get(this, 'baseRef');
-      return baseRef ? baseRef.toString() : 'none';
+      return baseRef && baseRef.toString();
     }).property('baseRef'),
 
     init: function () {
@@ -197,11 +197,11 @@
       var ref = get(this, 'baseRef');
       Ember.assert(fmt('Cannot create child ref of %@, ref is missing', [ this ]), ref);
 
-      if (childName == null) {
-        return ref.push();
+      if (childName) {
+        return ref.child(fmt(childName, [].slice.call(arguments, 1)));
       }
 
-      return ref.child(fmt(childName, [].slice.call(arguments, 1)));
+      return ref.push();
     }
 
   });
