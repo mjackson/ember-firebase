@@ -357,12 +357,19 @@
     },
 
     /**
+     * Returns the child name of the item at the given index.
+     */
+    childNameAt: function (index) {
+      return this._names[index];
+    },
+
+    /**
      * A hook that subclasses can use to coerce the value from a snapshot.
      */
     createValueFromSnapshot: getSnapshotValue,
 
-    _indexAfter: function (name) {
-      return name ? this._names.indexOf(name) + 1 : 0;
+    _indexAfter: function (childName) {
+      return childName ? this._names.indexOf(childName) + 1 : 0;
     },
 
     childWasAdded: function (snapshot, previousName) {
