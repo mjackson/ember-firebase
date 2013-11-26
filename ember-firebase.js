@@ -81,6 +81,36 @@
   };
 
   /**
+   * Create a child of the given reference. If childName is given it will be the
+   * name of the child reference. If a formatArgs array is given, childName is
+   * treated as a string format. If any of formatArgs have an `id` property it is
+   * interpolated automatically, e.g. the following have identical results:
+   *
+   *   Firebase.child(ref, 'users/%@/sessions', [ user ]);
+   *   Firebase.child(ref, 'users/%@/sessions', [ user.id ]);
+   *
+   * If no `childName` is given a new child is automatically generated using `push`.
+   *
+   * See https://www.firebase.com/docs/javascript/firebase/child.html
+   * and https://www.firebase.com/docs/javascript/firebase/push.html
+   */
+  Firebase.child = function (ref, childName, formatArgs) {
+    if (childName) {
+      if (formatArgs && get(formatArgs, 'length')) {
+        return ref.child(fmt(childName, formatArgs.map(getId)));
+      }
+
+      return ref.child(childName);
+    }
+
+    return ref.push();
+  };
+
+  function getId(object) {
+    return get(object, 'id') || object;
+  }
+
+  /**
    * An Ember.Mixin for objects that are a proxy for a Firebase location
    * reference (or query).
    */
@@ -183,25 +213,13 @@
     },
 
     /**
-     * Creates a Firebase location reference to the child location with
-     * the given name. If the name is not given a new location is generated
-     * using push(). If it is given, it may contain a string format that will
-     * use all remaining arguments.
-     *
-     *   proxy.childRef('chats/%@/messages', chat.id);
-     *
-     * See https://www.firebase.com/docs/javascript/firebase/child.html
-     * and https://www.firebase.com/docs/javascript/firebase/push.html
+     * Creates a child reference using `Firebase.child` and this proxy's
+     * `baseRef` along with any additional arguments.
      */
     childRef: function (childName) {
       var ref = get(this, 'baseRef');
       Ember.assert(fmt('Cannot create child ref of %@, ref is missing', [ this ]), ref);
-
-      if (childName) {
-        return ref.child(fmt(childName, [].slice.call(arguments, 1)));
-      }
-
-      return ref.push();
+      return Firebase.child(ref, childName, [].slice.call(arguments, 1));
     }
 
   });
@@ -342,7 +360,7 @@
     },
 
     _resetContent: Ember.beforeObserver(function () {
-      set(this, 'content', Ember.A([]));
+      set(this, 'content', Ember.A());
       this._names = [];
     }, 'ref'),
 
@@ -374,7 +392,7 @@
 
     childWasAdded: function (snapshot, previousName) {
       var index = this._indexAfter(previousName);
-      get(this, 'content').insertAt(index, this.createValueFromSnapshot(snapshot));
+      get(this, 'content').replace(index, 0, [ this.createValueFromSnapshot(snapshot) ]);
       this._names[index] = snapshot.name();
     },
 
@@ -387,7 +405,7 @@
     childWasRemoved: function (snapshot) {
       var index = this._names.indexOf(snapshot.name());
       if (index !== -1) {
-        get(this, 'content').removeAt(index);
+        get(this, 'content').replace(index, 1);
         this._names.splice(index, 1);
       }
     },
