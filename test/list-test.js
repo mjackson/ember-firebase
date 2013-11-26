@@ -40,6 +40,17 @@ describe('A Firebase.List', function () {
       });
     });
 
+    describe('when an object is added', function () {
+      beforeEach(function () {
+        list.addObject(4);
+        objects.push(4);
+      });
+
+      it('has the correct length', function () {
+        expect(list.get('length')).to.equal(objects.length);
+      });
+    });
+
     describe('when cleared', function () {
       beforeEach(function () {
         list.clear();
