@@ -9,12 +9,22 @@ describe('A Firebase.List', function () {
   var list;
   beforeEach(function () {
     list = Firebase.List.create({ ref: BASE_REF });
-    return Firebase.set(BASE_REF, null);
   });
 
   it('has the correct string representation', function () {
     expect(list + '').to.include('Firebase.List');
     expect(list + '').to.include(list.get('baseUrl'));
+  });
+
+  describe('when converted to a hash', function () {
+    var hash;
+    beforeEach(function () {
+      hash = list.toHash();
+    });
+
+    it('becomes a Firebase.List', function () {
+      expect(hash).to.be.instanceof(Firebase.Hash);
+    });
   });
 
   describe('with no objects', function () {
@@ -161,9 +171,9 @@ describe('A Firebase.List', function () {
 
   describe('pushWithPriority', function () {
     beforeEach(function () {
-      list.pushWithPriority(1, 1);
       list.pushWithPriority(1, 2);
-      list.pushWithPriority(2, 0);
+      list.pushWithPriority(1, 3);
+      list.pushWithPriority(2, 1);
     });
 
     it('unconditionally adds objects', function () {

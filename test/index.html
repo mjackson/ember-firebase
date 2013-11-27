@@ -18,11 +18,16 @@
     <script src="lib/mocha-as-promised.js"></script>
     <script src="https://cdn.firebase.com/v0/firebase.js"></script>
 
-    <!--
-    All tests will run against this ref, so make sure you
-    don't have any data under it you can't afford to lose.
-    -->
-    <script>var BASE_REF = new Firebase('https://ember-firebase.firebaseio.com');</script>
+    <script>
+    // All tests will run against this ref, so make sure you
+    // don't have any data under it you can't afford to lose.
+    var BASE_REF = new Firebase('https://ember-firebase.firebaseio.com');
+
+    // Clear the BASE_REF before each spec runs.
+    beforeEach(function () {
+      return Firebase.set(BASE_REF, null);
+    });
+    </script>
 
     <!--
     ember-firebase & tests
