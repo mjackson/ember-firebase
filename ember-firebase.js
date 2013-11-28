@@ -145,7 +145,11 @@
 
     init: function () {
       this._super();
-      this._setupRef();
+
+      // Since _setupRef may modify this proxy's content
+      // we need to call it during the init event.
+      // https://github.com/emberjs/ember.js/issues/3818
+      Ember.addListener(this, 'init', this, this._setupRef, true);
     },
 
     willDestroy: function () {
