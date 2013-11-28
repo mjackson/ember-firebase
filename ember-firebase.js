@@ -282,7 +282,10 @@
      */
     setUnknownProperty: function (property, object) {
       var ref = get(this, 'baseRef');
-      Ember.assert(fmt('Cannot set property %@ on %@, ref is missing', [ property, this ]), ref);
+
+      if (!ref) {
+        throw new Error(fmt('Cannot set property "%@" on %@, ref is missing', [ property, this ]));
+      }
 
       ref.child(property).set(getFirebaseValue(object));
 
@@ -294,7 +297,10 @@
      */
     setWithPriority: function (property, object, priority) {
       var ref = get(this, 'baseRef');
-      Ember.assert(fmt('Cannot set property %@ on %@, ref is missing', [ property, this ]), ref);
+
+      if (!ref) {
+        throw new Error(fmt('Cannot set property "%@" on %@, ref is missing', [ property, this ]));
+      }
 
       ref.child(property).setWithPriority(getFirebaseValue(object), priority);
 
@@ -426,7 +432,10 @@
      */
     replaceContent: function (index, amount, objects) {
       var ref = get(this, 'baseRef');
-      Ember.assert(fmt('Cannot replace content of %@, ref is missing', [ this ]), ref);
+
+      if (!ref) {
+        throw new Error(fmt('Cannot replace content of %@, ref is missing', [ this ]));
+      }
 
       // Remove objects that are being replaced.
       forEach(this._names.slice(index, index + amount), function (childName) {
@@ -449,7 +458,10 @@
      */
     pushWithPriority: function (object, priority) {
       var ref = get(this, 'baseRef');
-      Ember.assert(fmt('Cannot push object %@ on %@, ref is missing', [ object, this ]), ref);
+
+      if (!ref) {
+        throw new Error(fmt('Cannot push object %@ on %@, ref is missing', [ object, this ]));
+      }
 
       ref.push().setWithPriority(getFirebaseValue(object), priority);
 
