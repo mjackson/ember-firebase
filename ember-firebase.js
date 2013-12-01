@@ -96,7 +96,7 @@
    */
   Firebase.child = function (ref, childName, formatArgs) {
     if (childName) {
-      if (formatArgs && get(formatArgs, 'length')) {
+      if (formatArgs && isFunction(formatArgs.map)) {
         return ref.child(fmt(childName, formatArgs.map(getId)));
       }
 
