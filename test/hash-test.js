@@ -49,8 +49,8 @@ describe('A Firebase.Hash', function () {
         hash.set('key', { a: 'b', c: 'd' });
       });
 
-      it('gets a Firebase.Hash', function () {
-        expect(hash.get('key')).to.be.instanceof(Firebase.Hash);
+      it('gets an object', function () {
+        expect(typeof hash.get('key')).to.equal('object');
       });
     });
 
@@ -59,8 +59,8 @@ describe('A Firebase.Hash', function () {
         hash.set('key', [ 1, 2, 3 ]);
       });
 
-      it('gets a Firebase.Hash', function () {
-        expect(hash.get('key')).to.be.instanceof(Firebase.Hash);
+      it('gets an object', function () {
+        expect(typeof hash.get('key')).to.equal('object');
       });
     });
   });

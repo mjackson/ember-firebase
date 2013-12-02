@@ -8,13 +8,17 @@
       RSVP = Ember.RSVP;
 
   /**
-   * Returns a promise for the value at the given ref.
+   * Returns a promise for the value at the given ref. The second argument
+   * specifies a function that will be used to coerce the value from the
+   * snapshot before resolving the promise. By default it uses snapshot.val().
    */
-  Firebase.get = function (ref) {
+  Firebase.get = function (ref, createValueFromSnapshot) {
+    createValueFromSnapshot = createValueFromSnapshot || getSnapshotValue;
+
     var deferred = RSVP.defer();
 
     ref.once('value', function (snapshot) {
-      deferred.resolve(getSnapshotValue(snapshot));
+      deferred.resolve(createValueFromSnapshot(snapshot));
     }, deferred.reject);
 
     return deferred.promise;
@@ -25,8 +29,8 @@
    * promise that resolves to the location reference when the sync is complete.
    */
   Firebase.set = function (ref, object, priority) {
-    var value = getFirebaseValue(object);
     var deferred = RSVP.defer();
+    var value = getFirebaseValue(object);
 
     function onComplete(error) {
       if (error) {
@@ -67,8 +71,8 @@
    * promise that resolves to the ref when the sync is complete.
    */
   Firebase.update = function (ref, object) {
-    var value = getFirebaseValue(object);
     var deferred = RSVP.defer();
+    var value = getFirebaseValue(object);
 
     ref.update(value, function (error) {
       if (error) {
@@ -132,8 +136,7 @@
      * is really a query.
      */
     baseRef: Ember.computed(function () {
-      var ref = get(this, 'ref');
-      return isFirebaseQuery(ref) ? ref.ref() : ref;
+      return getFirebase(get(this, 'ref'));
     }).property('ref'),
 
     /**
@@ -261,6 +264,7 @@
 
     /**
      * A hook that subclasses can use to coerce the value from a snapshot.
+     * See Firebase.Hash#createValueFromSnapshot.
      */
     createValueFromSnapshot: getSnapshotValue,
 
@@ -393,7 +397,24 @@
     },
 
     /**
-     * A hook that subclasses can use to coerce the value from a snapshot.
+     * A hook that subclasses can use to coerce the value from a snapshot. This may
+     * be overridden for certain children to automatically form a tree of Hash objects.
+     *
+     * For example, if you had a child location named "users" that you automatically
+     * wanted to coerce to a Firebase.Hash, you could use the following Hash class to
+     * represent the parent location:
+     *
+     *   var NestedHash = Firebase.Hash.extend({
+     *
+     *     createValueFromSnapshot: function (snapshot) {
+     *       if (snapshot.name() === 'users') {
+     *         return Firebase.Hash.create({ ref: snapshot.ref() });
+     *       }
+     *
+     *       return this._super(snapshot);
+     *     }
+     *
+     *   });
      */
     createValueFromSnapshot: getSnapshotValue,
 
@@ -508,28 +529,23 @@
 
   });
 
-  /**
-   * The default function used to coerce the value from a snapshot. Returns a
-   * Firebase.Hash for snapshots with children, the plain value otherwise.
-   */
+  // The default function used to coerce the value from a snapshot.
   function getSnapshotValue(snapshot) {
-    if (snapshot.hasChildren()) {
-      return Firebase.Hash.create({ ref: snapshot.ref() });
-    }
-
     return snapshot.val();
   }
 
-  /**
-   * Returns a representation of the given object that is able to be saved
-   * to a Firebase location.
-   */
+  // Returns a representation of the given object that is able to be saved
+  // to a Firebase location.
   function getFirebaseValue(object) {
     return object && isFunction(object.toJSON) ? object.toJSON() : object;
   }
 
   function isFirebaseQuery(object) {
     return object && isFunction(object.ref);
+  }
+
+  function getFirebase(ref) {
+    return isFirebaseQuery(ref) ? ref.ref() : ref;
   }
 
   function isFunction(object) {

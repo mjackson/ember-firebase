@@ -25,6 +25,7 @@
 
     // Clear the BASE_REF before each spec runs.
     beforeEach(function () {
+      BASE_REF.off();
       return Firebase.set(BASE_REF, null);
     });
     </script>

@@ -30,20 +30,33 @@ describe('Firebase.get and Firebase.set', function () {
     });
   });
 
+  describe('when an empty object is set', function () {
+    beforeEach(function () {
+      return setupValue({});
+    });
+
+    it('returns null', function () {
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('when an empty array is set', function () {
+    beforeEach(function () {
+      return setupValue([]);
+    });
+
+    it('returns null', function () {
+      expect(result).to.be.null;
+    });
+  });
+
   describe('when an object is set', function () {
     beforeEach(function () {
-      return setupValue({
-        myString: 'value',
-        myObject: { a: 'value' }
-      });
+      return setupValue({ a: 'value' });
     });
 
-    it('returns a Firebase.Hash', function () {
-      expect(result).to.be.instanceof(Firebase.Hash);
-    });
-
-    it('returns a Firebase.Hash for a nested object', function () {
-      expect(result.get('myObject')).to.be.instanceof(Firebase.Hash);
+    it('returns an object', function () {
+      expect(typeof result).to.equal('object');
     });
   });
 
@@ -52,8 +65,8 @@ describe('Firebase.get and Firebase.set', function () {
       return setupValue([ 1, 2, 3 ]);
     });
 
-    it('returns a Firebase.Hash', function () {
-      expect(result).to.be.instanceof(Firebase.Hash);
+    it('returns an object', function () {
+      expect(typeof result).to.equal('object');
     });
   });
 
@@ -75,13 +88,13 @@ describe('Firebase.update', function () {
       return setupValue({ a: 'b', c: 'd' });
     });
 
-    it('returns a Firebase.Hash', function () {
-      expect(result).to.be.instanceof(Firebase.Hash);
+    it('returns an object', function () {
+      expect(typeof result).to.equal('object');
     });
 
     it('reflects the updated values', function () {
-      expect(result.get('a')).to.equal('b');
-      expect(result.get('c')).to.equal('d');
+      expect(result.a).to.equal('b');
+      expect(result.c).to.equal('d');
     });
 
     describe('and another object updates some keys', function () {
@@ -89,16 +102,16 @@ describe('Firebase.update', function () {
         return setupValue({ a: 'z' });
       });
 
-      it('returns a Firebase.Hash', function () {
-        expect(result).to.be.instanceof(Firebase.Hash);
+      it('returns an object', function () {
+        expect(typeof result).to.equal('object');
       });
 
       it('preserves old values', function () {
-        expect(result.get('c')).to.equal('d');
+        expect(result.c).to.equal('d');
       });
 
       it('reflects the updated values', function () {
-        expect(result.get('a')).to.equal('z');
+        expect(result.a).to.equal('z');
       });
     });
   });
