@@ -4,6 +4,7 @@
       set = Ember.set,
       fmt = Ember.String.fmt,
       forEach = Ember.EnumerableUtils.forEach,
+      map = Ember.EnumerableUtils.map,
       RSVP = Ember.RSVP;
 
   /**
@@ -96,8 +97,8 @@
    */
   Firebase.child = function (ref, childName, formatArgs) {
     if (childName) {
-      if (formatArgs && isFunction(formatArgs.map)) {
-        return ref.child(fmt(childName, formatArgs.map(getId)));
+      if (formatArgs) {
+        return ref.child(fmt(childName, map(formatArgs, getId)));
       }
 
       return ref.child(childName);

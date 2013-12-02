@@ -104,3 +104,44 @@ describe('Firebase.update', function () {
   });
 
 });
+
+describe('Firebase.child', function () {
+
+  var child, childString;
+  function createChild(childName, formatArgs) {
+    child = Firebase.child(BASE_REF, childName, formatArgs);
+    childString = child.toString();
+  }
+
+  describe('when no arguments are given', function () {
+    beforeEach(function () {
+      createChild();
+    });
+
+    it('automatically creates a new reference', function () {
+      expect(child).to.be.ok;
+    });
+  });
+
+  describe('when interpolating path arguments', function () {
+    describe("that don't have an id", function () {
+      beforeEach(function () {
+        createChild('%@/%@', [ 'my', 'path' ]);
+      });
+
+      it('creates the correct path', function () {
+        expect(childString).to.contain('/my/path');
+      });
+    });
+
+    describe('that have an id', function () {
+      beforeEach(function () {
+        createChild('%@/%@', [ { id: 'my' }, { id: 'path' } ]);
+      });
+
+      it('creates the correct path', function () {
+        expect(childString).to.contain('/my/path');
+      });
+    });
+  });
+});
