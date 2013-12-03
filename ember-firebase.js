@@ -151,7 +151,7 @@
 
     /**
      * Used to coerce the value from a snapshot when the ref value changes.
-     * See Firebase.Hash#createValueFromSnapshot.
+     * See Firebase.Proxy#createValueFromSnapshot.
      */
     createValueFromSnapshot: getSnapshotValue,
 
@@ -433,6 +433,32 @@
     childWasMoved: Ember.K,
 
     /**
+     * A hook that proxies use to coerce the value from a snapshot. By default
+     * proxies do not store any property values in the content object that are
+     * already defined on the proxy itself. This behavior may be overridden as
+     * desired to form a tree of Hash/List objects for child locations.
+     *
+     * For example, to form an infinitely nested tree of objects that represent
+     * every node underneath a given Firebase location, you could use something
+     * like the following class:
+     *
+     *   var NestedHash = Firebase.Hash.extend({
+     *
+     *     createValueFromSnapshot: function (snapshot) {
+     *       if (snapshot.hasChildren()) {
+     *         return NestedHash.create({ ref: snapshot.ref() });
+     *       }
+     *
+     *       return this._super(snapshot);
+     *     }
+     *
+     *   });
+     */
+    createValueFromSnapshot: function (snapshot) {
+      return (snapshot.name() in this) ? null : getSnapshotValue(snapshot);
+    },
+
+    /**
      * Alters this proxy's ref to be limited to the given value.
      * Returns this proxy.
      *
@@ -506,28 +532,6 @@
     hasChild: function (childName) {
       return (childName in get(this, 'content'));
     },
-
-    /**
-     * A hook that subclasses can use to coerce the value from a snapshot. This may
-     * be overridden for certain children to automatically form a tree of Hash objects.
-     *
-     * For example, if you had a child location named "users" that you automatically
-     * wanted to coerce to a Firebase.Hash, you could use the following Hash class to
-     * represent the parent location:
-     *
-     *   var NestedHash = Firebase.Hash.extend({
-     *
-     *     createValueFromSnapshot: function (snapshot) {
-     *       if (snapshot.name() === 'users') {
-     *         return Firebase.Hash.create({ ref: snapshot.ref() });
-     *       }
-     *
-     *       return this._super(snapshot);
-     *     }
-     *
-     *   });
-     */
-    createValueFromSnapshot: getSnapshotValue,
 
     childWasAdded: function (snapshot) {
       set(get(this, 'content'), snapshot.name(), this.createValueFromSnapshot(snapshot));
@@ -656,12 +660,6 @@
     childNameAt: function (index) {
       return this._names[index];
     },
-
-    /**
-     * A hook that subclasses can use to coerce the value from a snapshot.
-     * See Firebase.Hash#createValueFromSnapshot.
-     */
-    createValueFromSnapshot: getSnapshotValue,
 
     _indexAfter: function (childName) {
       return childName ? this._names.indexOf(childName) + 1 : 0;
