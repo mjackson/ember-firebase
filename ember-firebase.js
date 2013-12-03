@@ -433,6 +433,16 @@
     childWasMoved: Ember.K,
 
     /**
+     * Creates a child reference using `Firebase.child` and this proxy's
+     * `baseRef` along with any additional arguments.
+     */
+    childRef: function (childName) {
+      var ref = get(this, 'baseRef');
+      Ember.assert(fmt('Cannot create child ref of %@, ref is missing', [ this ]), ref);
+      return Firebase.child(ref, childName, [].slice.call(arguments, 1));
+    },
+
+    /**
      * A hook that proxies use to coerce the value from a snapshot. By default
      * proxies do not store any property values in the content object that are
      * already defined on the proxy itself. This behavior may be overridden as
@@ -456,49 +466,6 @@
      */
     createValueFromSnapshot: function (snapshot) {
       return (snapshot.name() in this) ? null : getSnapshotValue(snapshot);
-    },
-
-    /**
-     * Alters this proxy's ref to be limited to the given value.
-     * Returns this proxy.
-     *
-     * See https://www.firebase.com/docs/javascript/firebase/limit.html
-     */
-    limit: function (value) {
-      set(this, 'ref', get(this, 'ref').limit(value));
-      return this;
-    },
-
-    /**
-     * Alters this proxy's ref to start at the given priority and name.
-     * Returns this proxy.
-     *
-     * See https://www.firebase.com/docs/javascript/firebase/startat.html
-     */
-    startAt: function (priority, name) {
-      set(this, 'ref', get(this, 'ref').startAt(priority, name));
-      return this;
-    },
-
-    /**
-     * Alters this proxy's ref to end at the given priority and name.
-     * Returns this proxy.
-     *
-     * See https://www.firebase.com/docs/javascript/firebase/endat.html
-     */
-    endAt: function (priority, name) {
-      set(this, 'ref', get(this, 'ref').endAt(priority, name));
-      return this;
-    },
-
-    /**
-     * Creates a child reference using `Firebase.child` and this proxy's
-     * `baseRef` along with any additional arguments.
-     */
-    childRef: function (childName) {
-      var ref = get(this, 'baseRef');
-      Ember.assert(fmt('Cannot create child ref of %@, ref is missing', [ this ]), ref);
-      return Firebase.child(ref, childName, [].slice.call(arguments, 1));
     }
 
   });
