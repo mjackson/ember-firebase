@@ -116,6 +116,250 @@
   }
 
   /**
+   * An Ember.Binding subclass that is able to bind an object property to
+   * the value at a Firebase location reference. A Firebase.Binding should
+   * be able to replace any instance of Ember.Binding, e.g.:
+   *
+   *   var valueRef = new Firebase('https://my-firebase.firebaseio.com/my/value');
+   *
+   *   var MyObject = Ember.Object.extend({
+   *     value: null,
+   *     valueBinding: Firebase.Binding.oneWay(valueRef)
+   *   });
+   */
+  Firebase.Binding = Binding;
+
+  function Binding(path, ref) {
+    this.ref = ref;
+    this.path = path;
+    this._directionMap = Ember.Map.create();
+    this._objects = Ember.A();
+  }
+
+  // We do this so `binding instanceof Ember.Binding` returns true.
+  Binding.prototype = new Ember.Binding();
+
+  Ember.merge(Binding.prototype, {
+
+    // Preserve the constructor.
+    constructor: Binding,
+
+    toString: function() {
+      var joinString = this._oneWay ? '->' : '<->';
+      return '<Firebase.Binding ' + this.ref + ' ' + joinString + ' ' + this.path + '>';
+    },
+
+    /**
+     * Used to coerce the value from a snapshot when the ref value changes.
+     * See Firebase.Hash#createValueFromSnapshot.
+     */
+    createValueFromSnapshot: getSnapshotValue,
+
+    /**
+     * Creates a copy of this binding. Used by Ember when a binding is setup
+     * as part of a prototype to create a separate binding for each instance.
+     */
+    copy: function () {
+      var copy = new Firebase.Binding(this.path, this.ref);
+
+      if (this._oneWay) {
+        copy._oneWay = true;
+      }
+
+      return copy;
+    },
+
+    /**
+     * Sets the Firebase location reference for this binding.
+     */
+    from: function (ref) {
+      this.ref = ref;
+      return this;
+    },
+
+    /**
+     * Sets the object path for this binding.
+     */
+    to: function (path) {
+      this.path = path;
+      return this;
+    },
+
+    /**
+     * Makes this binding go only one way, from Firebase to the object path.
+     */
+    oneWay: function () {
+      this._oneWay = true;
+      return this;
+    },
+
+    /**
+     * Connects this binding to the given object.
+     */
+    connect: function (object) {
+      this._objects.addObject(object);
+
+      // Observe the ref for changes if we're not already.
+      if (!this._observingRef) {
+        this.ref.on('value', this._refDidChange, this);
+        this._observingRef = true;
+      }
+
+      // Observe the path for changes if we're going both ways.
+      if (!this._oneWay) {
+        Ember.addObserver(object, this.path, this, this._pathDidChange);
+      }
+
+      return this;
+    },
+
+    /**
+     * Disconnects this binding from the given object.
+     */
+    disconnect: function (object) {
+      this._objects.removeObject(object);
+
+      // Stop observing the ref for changes if there are no more objects.
+      if (get(this._objects, 'length') === 0 && this._observingRef) {
+        this.ref.off('value', this._refDidChange, this);
+        this._observingRef = false;
+      }
+
+      // Stop observing the path for changes if we're going both ways.
+      if (!this._oneWay) {
+        Ember.removeObserver(object, this.path, this, this._pathDidChange);
+      }
+
+      // Prevent further syncing.
+      this._directionMap.remove(object);
+
+      return this;
+    },
+
+    _refDidChange: function (snapshot) {
+      if (this._ignoreRefChanges) return;
+
+      this._objects.forEach(function (object) {
+        this._scheduleSync('pull', object, snapshot);
+      }, this);
+    },
+
+    _pathDidChange: function (object) {
+      this._scheduleSync('push', object);
+    },
+
+    _scheduleSync: function (direction, object, snapshot) {
+      var directionMap = this._directionMap;
+      var existingDirection = directionMap.get(object);
+
+      // if we haven't scheduled the binding yet, schedule it
+      if (!existingDirection) {
+        Ember.run.schedule('sync', this, this._sync, object, snapshot);
+        directionMap.set(object, direction);
+      }
+
+      // If both a "push" and "pull" operation have been scheduled on the
+      // same object, default to "pull" so that it remains deterministic.
+      if (existingDirection === 'push' && direction === 'pull') {
+        directionMap.set(object, 'pull');
+      }
+    },
+
+    _sync: function (object, snapshot) {
+      if (object.isDestroyed) return;
+
+      var log = Ember.LOG_BINDINGS;
+      var ref = this.ref, path = this.path;
+
+      // Get the direction of the binding for the object we're syncing from.
+      var directionMap = this._directionMap;
+      var direction = directionMap.get(object);
+      directionMap.remove(object);
+
+      // If we're syncing from Firebase...
+      if (direction === 'pull') {
+        var value = this.createValueFromSnapshot(snapshot);
+
+        if (log) {
+          Ember.Logger.log(' ', this.toString(), '->', value, object);
+        }
+
+        if (this._oneWay) {
+          Ember.trySet(object, path, value);
+        } else {
+          Ember._suspendObserver(object, path, this, this._pathDidChange, function () {
+            Ember.trySet(object, path, value);
+          });
+        }
+
+      // If we're syncing to Firebase...
+      } else if (direction === 'push') {
+        var value = getFirebaseValue(get(object, path));
+
+        if (log) {
+          Ember.Logger.log(' ', this.toString(), '<-', value, object);
+        }
+
+        // This works because Firebase triggers local updates synchronously.
+        this._ignoreRefChanges = true;
+        ref.set(value);
+        this._ignoreRefChanges = false;
+      }
+    }
+
+  });
+
+  Ember.merge(Binding, {
+
+    toString: function () {
+      return 'Firebase.Binding';
+    },
+
+    /**
+     * A high-level method for creating a new binding from a given ref that
+     * is not yet connected to any objects. See Binding#from.
+     */
+    from: function () {
+      var C = this, binding = new C();
+      return binding.from.apply(binding, arguments);
+    },
+
+    /**
+     * A high-level method for creating a new binding to a given path that
+     * is not yet connected to any objects. See Binding#to.
+     */
+    to: function () {
+      var C = this, binding = new C();
+      return binding.to.apply(binding, arguments);
+    },
+
+    /**
+     * A high-level method for creating a new one-way binding from the given
+     * ref that is not yet connected to any object. See Binding.from and Binding#oneWay.
+     */
+    oneWay: function (ref) {
+      return this.from(ref).oneWay();
+    }
+
+  });
+
+  /**
+   * A high-level method for creating a new binding for the given path
+   * and ref connected to the given object.
+   */
+  Firebase.bind = function (object, path, ref) {
+    return new Firebase.Binding(path, ref).connect(object);
+  };
+
+  /**
+   * A high-level method for creating a new one-way binding for the given path
+   * and ref connected to the given object.
+   */
+  Firebase.oneWay = function (object, path, ref) {
+    return new Firebase.Binding(path, ref).oneWay().connect(object);
+  };
+
+  /**
    * An Ember.Mixin for objects that are a proxy for a Firebase location
    * reference (or query).
    */
@@ -136,7 +380,8 @@
      * is really a query.
      */
     baseRef: Ember.computed(function () {
-      return getFirebase(get(this, 'ref'));
+      var ref = get(this, 'ref');
+      return isFirebaseQuery(ref) ? ref.ref() : ref;
     }).property('ref'),
 
     /**
@@ -263,8 +508,24 @@
     },
 
     /**
-     * A hook that subclasses can use to coerce the value from a snapshot.
-     * See Firebase.Hash#createValueFromSnapshot.
+     * A hook that subclasses can use to coerce the value from a snapshot. This may
+     * be overridden for certain children to automatically form a tree of Hash objects.
+     *
+     * For example, if you had a child location named "users" that you automatically
+     * wanted to coerce to a Firebase.Hash, you could use the following Hash class to
+     * represent the parent location:
+     *
+     *   var NestedHash = Firebase.Hash.extend({
+     *
+     *     createValueFromSnapshot: function (snapshot) {
+     *       if (snapshot.name() === 'users') {
+     *         return Firebase.Hash.create({ ref: snapshot.ref() });
+     *       }
+     *
+     *       return this._super(snapshot);
+     *     }
+     *
+     *   });
      */
     createValueFromSnapshot: getSnapshotValue,
 
@@ -397,24 +658,8 @@
     },
 
     /**
-     * A hook that subclasses can use to coerce the value from a snapshot. This may
-     * be overridden for certain children to automatically form a tree of Hash objects.
-     *
-     * For example, if you had a child location named "users" that you automatically
-     * wanted to coerce to a Firebase.Hash, you could use the following Hash class to
-     * represent the parent location:
-     *
-     *   var NestedHash = Firebase.Hash.extend({
-     *
-     *     createValueFromSnapshot: function (snapshot) {
-     *       if (snapshot.name() === 'users') {
-     *         return Firebase.Hash.create({ ref: snapshot.ref() });
-     *       }
-     *
-     *       return this._super(snapshot);
-     *     }
-     *
-     *   });
+     * A hook that subclasses can use to coerce the value from a snapshot.
+     * See Firebase.Hash#createValueFromSnapshot.
      */
     createValueFromSnapshot: getSnapshotValue,
 
@@ -542,10 +787,6 @@
 
   function isFirebaseQuery(object) {
     return object && isFunction(object.ref);
-  }
-
-  function getFirebase(ref) {
-    return isFirebaseQuery(ref) ? ref.ref() : ref;
   }
 
   function isFunction(object) {
