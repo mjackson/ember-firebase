@@ -138,7 +138,8 @@ describe('A Firebase.List', function () {
     var limit, objects;
     beforeEach(function () {
       objects = [ 'a', 'b', 'c' ];
-      list.limit(limit = 3).pushObjects(objects);
+      list = Firebase.List.create({ ref: BASE_REF.limit(limit = 3) });
+      list.pushObjects(objects);
     });
 
     it('has the correct length', function () {
