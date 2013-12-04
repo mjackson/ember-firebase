@@ -3,8 +3,8 @@
   var get = Ember.get,
       set = Ember.set,
       fmt = Ember.String.fmt,
-      forEach = Ember.EnumerableUtils.forEach,
       map = Ember.EnumerableUtils.map,
+      forEach = Ember.EnumerableUtils.forEach,
       RSVP = Ember.RSVP;
 
   /**
