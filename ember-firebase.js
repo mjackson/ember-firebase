@@ -129,25 +129,16 @@
    */
   Firebase.Binding = Binding;
 
-  function Binding(path, ref) {
-    this.ref = ref;
-    this.path = path;
-    this._directionMap = Ember.Map.create();
+  function Binding(to, fromRef) {
+    Ember.Binding.call(this, to, fromRef);
     this._objects = Ember.A();
   }
 
-  // We do this so `binding instanceof Ember.Binding` returns true.
   Binding.prototype = new Ember.Binding();
 
   Ember.merge(Binding.prototype, {
 
-    // Preserve the constructor.
     constructor: Binding,
-
-    toString: function() {
-      var joinString = this._oneWay ? '->' : '<->';
-      return '<Firebase.Binding ' + this.ref + ' ' + joinString + ' ' + this.path + '>';
-    },
 
     /**
      * Used to coerce the value from a snapshot when the ref value changes.
@@ -158,9 +149,10 @@
     /**
      * Creates a copy of this binding. Used by Ember when a binding is setup
      * as part of a prototype to create a separate binding for each instance.
+     * See Ember.Binding#copy.
      */
     copy: function () {
-      var copy = new Firebase.Binding(this.path, this.ref);
+      var copy = new Firebase.Binding(this._to, this._from);
 
       if (this._oneWay) {
         copy._oneWay = true;
@@ -169,65 +161,46 @@
       return copy;
     },
 
-    /**
-     * Sets the Firebase location reference for this binding.
-     */
-    from: function (ref) {
-      this.ref = ref;
-      return this;
+    toString: function() {
+      var joinString = this._oneWay ? '->' : '<->';
+      return '<Firebase.Binding ' + this._from + ' ' + joinString + ' ' + this._to + '>';
     },
 
     /**
-     * Sets the object path for this binding.
-     */
-    to: function (path) {
-      this.path = path;
-      return this;
-    },
-
-    /**
-     * Makes this binding go only one way, from Firebase to the object path.
-     */
-    oneWay: function () {
-      this._oneWay = true;
-      return this;
-    },
-
-    /**
-     * Connects this binding to the given object.
+     * Connects this binding to the given object. See Ember.Binding#connect.
      */
     connect: function (object) {
       this._objects.addObject(object);
 
       // Observe the ref for changes if we're not already.
-      if (!this._observingRef) {
-        this.ref.on('value', this._refDidChange, this);
-        this._observingRef = true;
+      if (!this._observingFrom) {
+        this._from.on('value', this.fromRefDidChange, this);
+        this._observingFrom = true;
       }
 
       // Observe the path for changes if we're going both ways.
       if (!this._oneWay) {
-        Ember.addObserver(object, this.path, this, this._pathDidChange);
+        Ember.addObserver(object, this._to, this, this.toDidChange);
       }
 
       return this;
     },
 
     /**
-     * Disconnects this binding from the given object.
+     * Disconnects this binding from the given object. See Ember.Binding#disconnect.
      */
     disconnect: function (object) {
       this._objects.removeObject(object);
 
       // Stop observing the ref for changes if there are no more objects.
-      if (get(this._objects, 'length') === 0 && this._observingRef) {
-        this.ref.off('value', this._refDidChange, this);
-        this._observingRef = false;
+      if (get(this._objects, 'length') === 0 && this._observingFrom) {
+        this._from.off('value', this.fromRefDidChange, this);
+        this._observingFrom = false;
       }
 
       // Stop observing the path for changes if we're going both ways.
       if (!this._oneWay) {
-        Ember.removeObserver(object, this.path, this, this._pathDidChange);
+        Ember.removeObserver(object, this._to, this, this.toDidChange);
       }
 
       // Prevent further syncing.
@@ -236,19 +209,15 @@
       return this;
     },
 
-    _refDidChange: function (snapshot) {
-      if (this._ignoreRefChanges) return;
+    fromRefDidChange: function (snapshot) {
+      if (this._ignoringFrom) return;
 
       this._objects.forEach(function (object) {
-        this._scheduleSync('pull', object, snapshot);
+        this._scheduleSync(object, 'fwd', snapshot);
       }, this);
     },
 
-    _pathDidChange: function (object) {
-      this._scheduleSync('push', object);
-    },
-
-    _scheduleSync: function (direction, object, snapshot) {
+    _scheduleSync: function (object, direction, snapshot) {
       var directionMap = this._directionMap;
       var existingDirection = directionMap.get(object);
 
@@ -258,10 +227,10 @@
         directionMap.set(object, direction);
       }
 
-      // If both a "push" and "pull" operation have been scheduled on the
-      // same object, default to "pull" so that it remains deterministic.
-      if (existingDirection === 'push' && direction === 'pull') {
-        directionMap.set(object, 'pull');
+      // If both a "back" and "fwd" operation have been scheduled on the
+      // same object, default to "fwd" so that it remains deterministic.
+      if (existingDirection === 'back' && direction === 'fwd') {
+        directionMap.set(object, 'fwd');
       }
     },
 
@@ -269,7 +238,7 @@
       if (object.isDestroyed) return;
 
       var log = Ember.LOG_BINDINGS;
-      var ref = this.ref, path = this.path;
+      var to = this._to, fromRef = this._from;
 
       // Get the direction of the binding for the object we're syncing from.
       var directionMap = this._directionMap;
@@ -277,7 +246,7 @@
       directionMap.remove(object);
 
       // If we're syncing from Firebase...
-      if (direction === 'pull') {
+      if (direction === 'fwd') {
         var value = this.createValueFromSnapshot(snapshot);
 
         if (log) {
@@ -285,25 +254,25 @@
         }
 
         if (this._oneWay) {
-          Ember.trySet(object, path, value);
+          Ember.trySet(object, to, value);
         } else {
-          Ember._suspendObserver(object, path, this, this._pathDidChange, function () {
-            Ember.trySet(object, path, value);
+          Ember._suspendObserver(object, to, this, this.toDidChange, function () {
+            Ember.trySet(object, to, value);
           });
         }
 
       // If we're syncing to Firebase...
-      } else if (direction === 'push') {
-        var value = getFirebaseValue(get(object, path));
+      } else if (direction === 'back') {
+        var value = getFirebaseValue(get(object, to));
 
         if (log) {
           Ember.Logger.log(' ', this.toString(), '<-', value, object);
         }
 
         // This works because Firebase triggers local updates synchronously.
-        this._ignoreRefChanges = true;
-        ref.set(value);
-        this._ignoreRefChanges = false;
+        this._ignoringFrom = true;
+        fromRef.set(value);
+        this._ignoringFrom = false;
       }
     }
 
@@ -320,7 +289,7 @@
      * is not yet connected to any objects. See Binding#from.
      */
     from: function () {
-      var C = this, binding = new C();
+      var binding = new Firebase.Binding();
       return binding.from.apply(binding, arguments);
     },
 
@@ -329,7 +298,7 @@
      * is not yet connected to any objects. See Binding#to.
      */
     to: function () {
-      var C = this, binding = new C();
+      var binding = new Firebase.Binding();
       return binding.to.apply(binding, arguments);
     },
 
@@ -347,16 +316,16 @@
    * A high-level method for creating a new binding for the given path
    * and ref connected to the given object.
    */
-  Firebase.bind = function (object, path, ref) {
-    return new Firebase.Binding(path, ref).connect(object);
+  Firebase.bind = function (object, to, fromRef) {
+    return new Firebase.Binding(to, fromRef).connect(object);
   };
 
   /**
    * A high-level method for creating a new one-way binding for the given path
    * and ref connected to the given object.
    */
-  Firebase.oneWay = function (object, path, ref) {
-    return new Firebase.Binding(path, ref).oneWay().connect(object);
+  Firebase.oneWay = function (object, to, fromRef) {
+    return new Firebase.Binding(to, fromRef).oneWay().connect(object);
   };
 
   /**
