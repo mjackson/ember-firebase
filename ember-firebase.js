@@ -407,7 +407,11 @@
      */
     childRef: function (childName) {
       var ref = get(this, 'baseRef');
-      Ember.assert(fmt('Cannot create child ref of %@, ref is missing', [ this ]), ref);
+
+      if (!ref) {
+        throw new Error(fmt('Cannot create child ref of %@, ref is missing', [ this ]));
+      }
+
       return Firebase.child(ref, childName, [].slice.call(arguments, 1));
     },
 
