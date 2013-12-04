@@ -416,6 +416,19 @@
     },
 
     /**
+     * Removes this proxy's `baseRef`.
+     */
+    remove: function () {
+      var ref = get(this, 'baseRef');
+
+      if (!ref) {
+        throw new Error(fmt('Cannot remove %@, ref is missing', [ this ]));
+      }
+
+      return Firebase.remove(ref);
+    },
+
+    /**
      * A hook that proxies use to coerce the value from a snapshot. By default
      * proxies do not store any property values in the content object that are
      * already defined on the proxy itself. This behavior may be overridden as
