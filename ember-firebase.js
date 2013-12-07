@@ -134,7 +134,7 @@
     this._objects = Ember.A();
   }
 
-  Binding.prototype = new Ember.Binding();
+  Binding.prototype = Ember.create(Ember.Binding.prototype);
 
   Ember.merge(Binding.prototype, {
 
