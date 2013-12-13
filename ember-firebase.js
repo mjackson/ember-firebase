@@ -587,6 +587,8 @@
    */
   Firebase.List = Ember.ArrayProxy.extend(Firebase.Proxy, {
 
+    names: null,
+
     init: function () {
       this._resetContent();
       this._super();
@@ -594,7 +596,7 @@
 
     _resetContent: Ember.beforeObserver(function () {
       set(this, 'content', Ember.A());
-      this._names = [];
+      set(this, 'names', Ember.A());
     }, 'ref'),
 
     /**
@@ -604,37 +606,38 @@
      * accurate when using a query to filter the data.
      */
     hasChild: function (childName) {
-      return this._names.indexOf(childName) !== -1;
+      return get(this, 'names').contains(childName);
     },
 
     /**
      * Returns the child name of the item at the given index.
      */
     childNameAt: function (index) {
-      return this._names[index];
+      return get(this, 'names').objectAt(index);
     },
 
     _indexAfter: function (childName) {
-      return childName ? this._names.indexOf(childName) + 1 : 0;
+      return childName ? get(this, 'names').indexOf(childName) + 1 : 0;
     },
 
     childWasAdded: function (snapshot, previousName) {
       var index = this._indexAfter(previousName);
       get(this, 'content').replace(index, 0, [ this.createValueFromSnapshot(snapshot) ]);
-      this._names[index] = snapshot.name();
+      get(this, 'names').replace(index, 0, [ snapshot.name() ]);
     },
 
     childWasChanged: function (snapshot, previousName) {
       var index = this._indexAfter(previousName);
       get(this, 'content').replace(index, 1, [ this.createValueFromSnapshot(snapshot) ]);
-      this._names[index] = snapshot.name();
+      get(this, 'names').replace(index, 1, [ snapshot.name() ]);
     },
 
     childWasRemoved: function (snapshot) {
-      var index = this._names.indexOf(snapshot.name());
+      var index = get(this, 'names').indexOf(snapshot.name());
+
       if (index !== -1) {
         get(this, 'content').replace(index, 1);
-        this._names.splice(index, 1);
+        get(this, 'names').replace(index, 1);
       }
     },
 
@@ -656,7 +659,7 @@
       }
 
       // Remove objects that are being replaced.
-      forEach(this._names.slice(index, index + amount), function (childName) {
+      forEach(get(this, 'names').slice(index, index + amount), function (childName) {
         ref.child(childName).remove();
       });
 
@@ -705,7 +708,7 @@
      */
     toJSON: function () {
       var content = get(this, 'content');
-      var names = this._names;
+      var names = get(this, 'names');
 
       var json = {};
       for (var i = 0, len = names.length; i < len; ++i) {
