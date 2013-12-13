@@ -348,18 +348,18 @@
      * create child refs. This is only needed when the original ref
      * is really a query.
      */
-    baseRef: Ember.computed(function () {
+    baseRef: Ember.computed('ref', function () {
       var ref = get(this, 'ref');
       return isFirebaseQuery(ref) ? ref.ref() : ref;
-    }).property('ref'),
+    }),
 
     /**
      * The Firebase URL for this proxy's location reference.
      */
-    baseUrl: Ember.computed(function () {
+    baseUrl: Ember.computed('baseRef', function () {
       var baseRef = get(this, 'baseRef');
       return baseRef && baseRef.toString();
-    }).property('baseRef'),
+    }),
 
     init: function () {
       this._super();
