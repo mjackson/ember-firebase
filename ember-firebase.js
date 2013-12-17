@@ -628,8 +628,13 @@
 
     childWasChanged: function (snapshot, previousName) {
       var index = this._indexAfter(previousName);
-      get(this, 'content').replace(index, 1, [ this.createValueFromSnapshot(snapshot) ]);
-      get(this, 'names').replace(index, 1, [ snapshot.name() ]);
+      var currentValue = this.objectAt(index);
+      var newValue = this.createValueFromSnapshot(snapshot);
+
+      if (newValue !== currentValue) {
+        get(this, 'content').replace(index, 1, [ newValue ]);
+        get(this, 'names').replace(index, 1, [ snapshot.name() ]);
+      }
     },
 
     childWasRemoved: function (snapshot) {
