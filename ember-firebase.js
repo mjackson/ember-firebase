@@ -647,8 +647,18 @@
     },
 
     childWasMoved: function (snapshot, previousName) {
-      this.childWasRemoved(snapshot);
-      this.childWasAdded(snapshot, previousName);
+      var fromIndex = get(this, 'names').indexOf(snapshot.name());
+      var toIndex = this._indexAfter(previousName);
+
+      if (fromIndex !== toIndex) {
+        if (fromIndex !== -1) {
+          get(this, 'content').replace(fromIndex, 1);
+          get(this, 'names').replace(fromIndex, 1);
+        }
+
+        get(this, 'content').replace(toIndex, 0, [ this.createValueFromSnapshot(snapshot) ]);
+        get(this, 'names').replace(toIndex, 0, [ snapshot.name() ]);
+      }
     },
 
     /**
