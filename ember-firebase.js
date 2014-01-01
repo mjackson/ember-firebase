@@ -569,9 +569,9 @@
   });
 
   /**
-   * An Ember.ArrayProxy that respects the ordering of a Firebase data structure.
+   * An Ember.ArrayProxy for a Firebase data structure that respects ordering of children.
    *
-   * IMPORTANT: There is currently no way to reliably alter the ordering of an array
+   * IMPORTANT: There is currently no way to atomically alter the ordering of children
    * in a Firebase data structure. Thus, when you add objects to a Firebase.List using
    * Ember.MutableArray's methods (e.g. insertAt, unshiftObject, etc.) you will not
    * see that ordering in the list. Instead, all objects added to a list are simply
