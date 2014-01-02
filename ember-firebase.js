@@ -161,11 +161,6 @@
       return copy;
     },
 
-    toString: function() {
-      var joinString = this._oneWay ? '->' : '<->';
-      return '<Firebase.Binding ' + this._from + ' ' + joinString + ' ' + this._to + '>';
-    },
-
     /**
      * Connects this binding to the given object. See Ember.Binding#connect.
      */
@@ -274,15 +269,16 @@
         fromRef.set(value);
         this._ignoringFrom = false;
       }
+    },
+
+    toString: function() {
+      var dirString = this._oneWay ? '->' : '<->';
+      return fmt('<%@ %@ %@ %@>', [ this.constructor, this._from, dirString, this._to ]);
     }
 
   });
 
   Ember.merge(Binding, {
-
-    toString: function () {
-      return 'Firebase.Binding';
-    },
 
     /**
      * A high-level method for creating a new binding from a given ref that
@@ -308,6 +304,10 @@
      */
     oneWay: function (ref) {
       return this.from(ref).oneWay();
+    },
+
+    toString: function () {
+      return 'Firebase.Binding';
     }
 
   });
@@ -452,6 +452,10 @@
      */
     createValueFromSnapshot: function (snapshot) {
       return (snapshot.name() in this) ? null : getSnapshotValue(snapshot);
+    },
+
+    toString: function () {
+      return fmt('<%@:%@>', [ this.constructor, get(this, 'baseUrl') ]);
     }
 
   });
@@ -535,13 +539,6 @@
      */
     toList: function () {
       return Firebase.List.create({ ref: get(this, 'ref') });
-    },
-
-    /**
-     * Returns a string representation of this hash.
-     */
-    toString: function () {
-      return fmt('<%@:%@>', [ get(this, 'constructor'), get(this, 'baseUrl') ]);
     },
 
     /**
@@ -709,13 +706,6 @@
      */
     toHash: function () {
       return Firebase.Hash.create({ ref: get(this, 'ref') });
-    },
-
-    /**
-     * Returns a string representation of this list.
-     */
-    toString: function () {
-      return fmt('<%@:%@>', [ get(this, 'constructor'), get(this, 'baseUrl') ]);
     },
 
     /**
