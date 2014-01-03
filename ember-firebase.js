@@ -661,6 +661,11 @@
         if (fromIndex !== -1) {
           get(this, 'content').replace(fromIndex, 1);
           get(this, 'names').replace(fromIndex, 1);
+
+          // Keep toIndex accurate since we just removed one.
+          if (toIndex > fromIndex) {
+            toIndex -= 1;
+          }
         }
 
         get(this, 'content').replace(toIndex, 0, [ this.createValueFromSnapshot(snapshot) ]);
