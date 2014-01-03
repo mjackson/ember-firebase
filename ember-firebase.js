@@ -25,6 +25,16 @@
   };
 
   /**
+   * Returns a promise for the value at the given ref, defaulting to the given
+   * default value if it is null. See Firebase.get.
+   */
+  Firebase.getWithDefault = function (ref, defaultValue, createValueFromSnapshot) {
+    return Firebase.get(ref, createValueFromSnapshot).then(function (value) {
+      return value == null ? defaultValue : value;
+    });
+  };
+
+  /**
    * Sets the value of the given ref with an optional priority. Returns a
    * promise that resolves to the location reference when the sync is complete.
    */
@@ -503,7 +513,7 @@
     },
 
     /**
-     * Ember.set uses this method to set properties on objects when the property
+     * Ember uses this method to set properties on objects when the property
      * is not already present. We use it to set values on the underlying ref
      * instead, which propagates those changes to all listeners synchronously.
      */
