@@ -384,7 +384,7 @@
       this._teardownRef();
     },
 
-    _setupRef: Ember.observer(function () {
+    _setupRef: Ember.observer('ref', function () {
       var ref = get(this, 'ref');
 
       if (ref) {
@@ -393,9 +393,9 @@
         ref.on('child_removed', this.childWasRemoved, this);
         ref.on('child_moved', this.childWasMoved, this);
       }
-    }, 'ref'),
+    }),
 
-    _teardownRef: Ember.beforeObserver(function () {
+    _teardownRef: Ember.beforeObserver('ref', function () {
       var ref = get(this, 'ref');
 
       if (ref) {
@@ -404,7 +404,7 @@
         ref.off('child_removed', this.childWasRemoved);
         ref.off('child_moved', this.childWasMoved);
       }
-    }, 'ref'),
+    }),
 
     childWasAdded: Ember.K,
     childWasChanged: Ember.K,
