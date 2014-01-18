@@ -1,7 +1,5 @@
 ember-firebase is a stable, [thoroughly-tested](https://github.com/mjijackson/ember-firebase/tree/master/test) set of [Firebase](https://www.firebase.com/index.html) bindings for [Ember.js](http://emberjs.com/).
 
-## Usage
-
 ### Firebase.Binding
 
 `Firebase.Binding` is a subclass of `Ember.Binding` that allows you to bind directly to a Firebase location reference from an arbitrary object path. The binding can be either two-way or read-only. Use it anywhere you would normally use an `Ember.Binding`.
@@ -85,11 +83,11 @@ messages.get('length'); // => 1
 
 ### Modeling Trees
 
-`Firebase.Hash` and `Firebase.List` both create values using their `createValueFromSnapshot` method. This method is responsible for creating a JavaScript value to store in your object based on the [DataSnapshot](https://www.firebase.com/docs/javascript/datasnapshot/index.html) received from Firebase.
+`Firebase.Hash` and `Firebase.List` both create values using their `createValueFromSnapshot` method. This method is responsible for creating a JavaScript value to store in your object based on the [DataSnapshot object](https://www.firebase.com/docs/javascript/datasnapshot/index.html) received from Firebase.
 
 The default implementation of this method simply returns `snapshot.val()`, but you can override it to do something more interesting. For example, you may be storing a list of ids that you'd like to convert to live proxy objects as ids are added to or removed from the list. Or you may want to model the nested data at a given location with a tree of proxy objects.
 
-The following `Firebase.Hash` subclass will recursively create a new instance of itself for every node in the tree.
+For example, the following `Firebase.Hash` subclass will recursively create a new instance of itself for every node in the tree.
 
 ```js
 var NestedHash = Firebase.Hash.extend({
@@ -120,7 +118,7 @@ Firebase.child(ref, 'chats/%@', chat);     // same as ref.child('chats/' + chat.
 
 ### Query Methods
 
-In addition to `Firebase.Binding`, `Firebase.Hash`, and `Firebase.List`, ember-firebase includes a suite of query methods that are useful for doing one-off queries. Each of these utility methods returns a promise that resolves when the sync with the Firebase servers is complete.
+In addition to `Firebase.Binding`, `Firebase.Hash`, and `Firebase.List`, ember-firebase includes a suite of query methods that are useful for doing one-off queries. Each of these utility methods returns a [promise](http://emberjs.com/api/classes/Ember.RSVP.Promise.html) that resolves when the sync with the Firebase servers is complete.
 
 ```js
 Firebase.get(ref).then(function (value) {
@@ -149,10 +147,10 @@ Firebase.update(ref, { some: 'updates' }).then(function () {
 });
 ```
 
-## Tests
+### Tests
 
-To run the tests change the `BASE_REF` variable in `test/index.html` to point to any Firebase location you have read/write access to and open the file in a browser.
+To run the tests, change the `BASE_REF` variable in `test/index.html` to point to any Firebase location you have read/write access to and open the file in a browser.
 
-## License
+### License
 
 [MIT](http://opensource.org/licenses/MIT)

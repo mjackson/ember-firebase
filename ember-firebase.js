@@ -444,11 +444,15 @@
      * already defined on the proxy itself. This behavior may be overridden as
      * desired to form a tree of Hash/List objects for child locations.
      *
-     * For example, to form an infinitely nested tree of objects that represent
+     * For example, to model an arbitrarily deep tree of objects that represent
      * every node underneath a given Firebase location, you could use something
      * like the following class:
      *
      *   var NestedHash = Firebase.Hash.extend({
+     *
+     *     unknownProperty: function (propertyName) {
+     *       return NestedHash.create({ ref: this.childRef(propertyName) });
+     *     },
      *
      *     createValueFromSnapshot: function (snapshot) {
      *       if (snapshot.hasChildren()) {
@@ -461,6 +465,8 @@
      *   });
      */
     createValueFromSnapshot: function (snapshot) {
+      // If the proxy already has a property with the same name as the
+      // snapshot it will override its content's value, so just return null.
       return (snapshot.name() in this) ? null : getSnapshotValue(snapshot);
     },
 
