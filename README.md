@@ -25,7 +25,7 @@ Note: The `Firebase.Binding` API closely follows `Ember.Binding`, so things like
 
 ### Firebase.Hash
 
-`Firebase.Hash` is an `Ember.ObjectProxy` subclass that can be used to model data at a single Firebase location reference, including children. Use it anywhere you would normally use an `Ember.Object`.
+`Firebase.Hash` is an `Ember.ObjectProxy` subclass that can be used to model data at a single Firebase location reference, including children. Use it anywhere you would normally use an `Ember.Object` (e.g. as the `content` of an `Ember.ObjectController`).
 
 You only need to give it a `ref` property that points to the Firebase location you want to sync with. When you set properties on the object they automatically sync to Firebase. When children of that location are updated in Firebase, they sync to your object.
 
@@ -60,7 +60,7 @@ user.get('fullName'); // => "Michael Johnson"
 
 ### Firebase.List
 
-`Firebase.List` is an `Ember.ArrayProxy` subclass that lets you store array-like data at a Firebase location. Use it anywhere you would normally use an `Ember.Array`.
+`Firebase.List` is an `Ember.ArrayProxy` subclass that lets you store array-like data at a Firebase location. Use it anywhere you would normally use an `Ember.Array` (e.g. as the `content` of an `Ember.ArrayController`).
 
 When you create a new `Firebase.List`, you need to give it a `ref` property that it will use to sync with Firebase. Note: You can also use a [query](https://www.firebase.com/docs/javascript/query/index.html) here, e.g. to limit the number of items in the list.
 
