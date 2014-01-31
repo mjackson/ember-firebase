@@ -493,14 +493,10 @@
    */
   Firebase.Hash = Ember.ObjectProxy.extend(Firebase.Proxy, {
 
-    init: function () {
-      this._resetContent();
+    _setupRef: function () {
+      set(this, 'content', {});
       this._super();
     },
-
-    _resetContent: Ember.beforeObserver(function () {
-      set(this, 'content', {});
-    }, 'ref'),
 
     /**
      * Returns true if this hash has a child with the given name.
@@ -620,15 +616,11 @@
 
     names: null,
 
-    init: function () {
-      this._resetContent();
+    _setupRef: function () {
+      set(this, 'names', Ember.A());
+      set(this, 'content', Ember.A());
       this._super();
     },
-
-    _resetContent: Ember.beforeObserver(function () {
-      set(this, 'content', Ember.A());
-      set(this, 'names', Ember.A());
-    }, 'ref'),
 
     /**
      * Returns true if this list has a child with the given name.
