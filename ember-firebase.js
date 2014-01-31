@@ -426,7 +426,17 @@
     },
 
     /**
-     * Removes this proxy's `baseRef`.
+     * A convenience method for creating a promise for the value stored at the child
+     * location with the given name. This is useful when you need to be sure you have
+     * the current value for a property (e.g. when doing a synchronous-style read) and
+     * it may not yet have loaded asynchronously.
+     */
+    getWithPromise: function (childName) {
+      return Firebase.get(this.childRef(childName), this.createValueFromSnapshot.bind(this));
+    },
+
+    /**
+     * Removes the value at this proxy's `baseRef`.
      */
     remove: function () {
       var ref = get(this, 'baseRef');
