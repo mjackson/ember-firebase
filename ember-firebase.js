@@ -464,11 +464,7 @@
      *
      *   });
      */
-    createValueFromSnapshot: function (snapshot) {
-      // If the proxy already has a property with the same name as the
-      // snapshot it will override its content's value, so just return null.
-      return (snapshot.name() in this) ? null : getSnapshotValue(snapshot);
-    },
+    createValueFromSnapshot: getSnapshotValue,
 
     toString: function () {
       return fmt('<%@:%@>', [ this.constructor, get(this, 'baseUrl') ]);
@@ -507,11 +503,23 @@
     },
 
     childWasAdded: function (snapshot) {
-      set(get(this, 'content'), snapshot.name(), this.createValueFromSnapshot(snapshot));
+      var propertyName = snapshot.name();
+
+      // If the proxy already has a property with the same name as the
+      // snapshot it will override its content's value, so ignore it.
+      if (!(propertyName in this)) {
+        set(get(this, 'content'), propertyName, this.createValueFromSnapshot(snapshot));
+      }
     },
 
     childWasChanged: function (snapshot) {
-      set(get(this, 'content'), snapshot.name(), this.createValueFromSnapshot(snapshot));
+      var propertyName = snapshot.name();
+
+      // If the proxy already has a property with the same name as the
+      // snapshot it will override its content's value, so ignore it.
+      if (!(propertyName in this)) {
+        set(get(this, 'content'), propertyName, this.createValueFromSnapshot(snapshot));
+      }
     },
 
     childWasRemoved: function (snapshot) {
