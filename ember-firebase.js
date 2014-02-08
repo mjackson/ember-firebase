@@ -650,12 +650,13 @@
     },
 
     childWasChanged: function (snapshot, previousName) {
+      var value = this.createValueFromSnapshot(snapshot);
       var index = this._indexAfter(previousName);
-      var currentValue = this.objectAt(index);
-      var newValue = this.createValueFromSnapshot(snapshot);
 
-      if (newValue !== currentValue) {
-        get(this, 'content').replace(index, 1, [ newValue ]);
+      // In some cases createValueFromSnapshot may return the
+      // same object. If it does, we can skip the replace.
+      if (this.objectAt(index) !== value) {
+        get(this, 'content').replace(index, 1, [ value ]);
         get(this, 'names').replace(index, 1, [ snapshot.name() ]);
       }
     },
