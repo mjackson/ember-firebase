@@ -96,6 +96,25 @@
   };
 
   /**
+   * Updates the given ref using the update callback in a transaction.
+   */
+  Firebase.transaction = function (ref, updateCallback, createValueFromSnapshot) {
+    createValueFromSnapshot = createValueFromSnapshot || getSnapshotValue;
+
+    var deferred = RSVP.defer();
+
+    ref.transaction(updateCallback, function (error, committed, snapshot) {
+      if (error) {
+        deferred.reject(error);
+      } else {
+        deferred.resolve(createValueFromSnapshot(snapshot));
+      }
+    });
+
+    return deferred.promise;
+  };
+
+  /**
    * Create a child of the given reference. If childName is given it will be the
    * name of the child reference. If a formatArgs array is given, childName is
    * treated as a string format. If any of formatArgs have an `id` property it is
