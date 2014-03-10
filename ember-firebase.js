@@ -621,8 +621,8 @@
     names: null,
 
     _setupRef: function () {
-      set(this, 'names', Ember.A());
       set(this, 'content', Ember.A());
+      set(this, 'names', Ember.A());
       this._super();
     },
 
@@ -654,11 +654,10 @@
     },
 
     childWasChanged: function (snapshot, previousName) {
-      var value = this.createValueFromSnapshot(snapshot);
       var index = this._indexAfter(previousName);
+      var value = this.createValueFromSnapshot(snapshot);
 
-      // In some cases createValueFromSnapshot may return the
-      // same object. If it does, we can skip the replace.
+      // If createValueFromSnapshot returns the same object we can skip the replace.
       if (this.objectAt(index) !== value) {
         get(this, 'content').replace(index, 1, [ value ]);
         get(this, 'names').replace(index, 1, [ snapshot.name() ]);
@@ -675,8 +674,8 @@
     },
 
     childWasMoved: function (snapshot, previousName) {
-      var fromIndex = get(this, 'names').indexOf(snapshot.name());
       var toIndex = this._indexAfter(previousName);
+      var fromIndex = get(this, 'names').indexOf(snapshot.name());
 
       if (fromIndex !== toIndex) {
         if (fromIndex !== -1) {
