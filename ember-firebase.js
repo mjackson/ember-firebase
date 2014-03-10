@@ -130,9 +130,8 @@
    */
   Firebase.child = function (ref, childName, formatArgs) {
     if (childName) {
-      if (formatArgs) {
+      if (formatArgs)
         return ref.child(fmt(childName, map(formatArgs, getId)));
-      }
 
       return ref.child(childName);
     }
@@ -183,9 +182,8 @@
     copy: function () {
       var copy = new Firebase.Binding(this._to, this._from);
 
-      if (this._oneWay) {
+      if (this._oneWay)
         copy._oneWay = true;
-      }
 
       return copy;
     },
@@ -203,9 +201,8 @@
       }
 
       // Observe the path for changes if we're going both ways.
-      if (!this._oneWay) {
+      if (!this._oneWay)
         Ember.addObserver(object, this._to, this, this.toDidChange);
-      }
 
       return this;
     },
@@ -223,9 +220,8 @@
       }
 
       // Stop observing the path for changes if we're going both ways.
-      if (!this._oneWay) {
+      if (!this._oneWay)
         Ember.removeObserver(object, this._to, this, this.toDidChange);
-      }
 
       // Prevent further syncing.
       this._directionMap.remove(object);
@@ -253,9 +249,8 @@
 
       // If both a "back" and "fwd" operation have been scheduled on the
       // same object, default to "fwd" so that it remains deterministic.
-      if (existingDirection === 'back' && direction === 'fwd') {
+      if (existingDirection === 'back' && direction === 'fwd')
         directionMap.set(object, 'fwd');
-      }
     },
 
     _sync: function (object, snapshot) {
@@ -273,9 +268,8 @@
       if (direction === 'fwd') {
         var value = this.createValueFromSnapshot(snapshot);
 
-        if (log) {
+        if (log)
           Ember.Logger.log(' ', this.toString(), '->', value, object);
-        }
 
         if (this._oneWay) {
           Ember.trySet(object, to, value);
@@ -289,9 +283,8 @@
       } else if (direction === 'back') {
         var value = getFirebaseValue(get(object, to));
 
-        if (log) {
+        if (log)
           Ember.Logger.log(' ', this.toString(), '<-', value, object);
-        }
 
         // This works because Firebase triggers local updates synchronously.
         this._ignoringFrom = true;
@@ -437,9 +430,8 @@
     childRef: function (childName) {
       var ref = get(this, 'baseRef');
 
-      if (!ref) {
+      if (!ref)
         throw new Error(fmt('Cannot create child ref of %@, ref is missing', [ this ]));
-      }
 
       return Firebase.child(ref, childName, [].slice.call(arguments, 1));
     },
@@ -460,9 +452,8 @@
     remove: function () {
       var ref = get(this, 'baseRef');
 
-      if (!ref) {
+      if (!ref)
         throw new Error(fmt('Cannot remove %@, ref is missing', [ this ]));
-      }
 
       return Firebase.remove(ref);
     },
@@ -484,9 +475,8 @@
      *     },
      *
      *     createValueFromSnapshot: function (snapshot) {
-     *       if (snapshot.hasChildren()) {
+     *       if (snapshot.hasChildren())
      *         return NestedHash.create({ ref: snapshot.ref() });
-     *       }
      *
      *       return this._super(snapshot);
      *     }
@@ -532,9 +522,8 @@
 
       // If the proxy already has a property with the same name as the
       // snapshot it will override its content's value, so ignore it.
-      if (!(propertyName in this)) {
+      if (!(propertyName in this))
         set(get(this, 'content'), propertyName, this.createValueFromSnapshot(snapshot));
-      }
     },
 
     childWasChanged: function (snapshot) {
@@ -542,9 +531,8 @@
 
       // If the proxy already has a property with the same name as the
       // snapshot it will override its content's value, so ignore it.
-      if (!(propertyName in this)) {
+      if (!(propertyName in this))
         set(get(this, 'content'), propertyName, this.createValueFromSnapshot(snapshot));
-      }
     },
 
     childWasRemoved: function (snapshot) {
@@ -559,9 +547,8 @@
     setUnknownProperty: function (property, object) {
       var ref = get(this, 'baseRef');
 
-      if (!ref) {
+      if (!ref)
         throw new Error(fmt('Cannot set property "%@" on %@, ref is missing', [ property, this ]));
-      }
 
       ref.child(property).set(getFirebaseValue(object));
 
@@ -574,9 +561,8 @@
     setWithPriority: function (property, object, priority) {
       var ref = get(this, 'baseRef');
 
-      if (!ref) {
+      if (!ref)
         throw new Error(fmt('Cannot set property "%@" on %@, ref is missing', [ property, this ]));
-      }
 
       ref.child(property).setWithPriority(getFirebaseValue(object), priority);
 
@@ -597,9 +583,8 @@
       var json = {};
 
       var content = get(this, 'content');
-      for (var property in content) {
+      for (var property in content)
         json[property] = getFirebaseValue(get(content, property));
-      }
 
       return json;
     }
@@ -699,9 +684,8 @@
           get(this, 'names').replace(fromIndex, 1);
 
           // Keep toIndex accurate since we just removed one.
-          if (toIndex > fromIndex) {
+          if (toIndex > fromIndex)
             toIndex -= 1;
-          }
         }
 
         get(this, 'content').replace(toIndex, 0, [ this.createValueFromSnapshot(snapshot) ]);
@@ -717,9 +701,8 @@
     replaceContent: function (index, amount, objects) {
       var ref = get(this, 'baseRef');
 
-      if (!ref) {
+      if (!ref)
         throw new Error(fmt('Cannot replace content of %@, ref is missing', [ this ]));
-      }
 
       // Remove objects that are being replaced.
       forEach(get(this, 'names').slice(index, index + amount), function (childName) {
@@ -743,9 +726,8 @@
     pushWithPriority: function (object, priority) {
       var ref = get(this, 'baseRef');
 
-      if (!ref) {
+      if (!ref)
         throw new Error(fmt('Cannot push object %@ on %@, ref is missing', [ object, this ]));
-      }
 
       ref.push().setWithPriority(getFirebaseValue(object), priority);
 
@@ -767,9 +749,8 @@
       var names = get(this, 'names');
 
       var json = {};
-      for (var i = 0, len = names.length; i < len; ++i) {
+      for (var i = 0, len = names.length; i < len; ++i)
         json[names[i]] = getFirebaseValue(content[i]);
-      }
 
       return json;
     }
