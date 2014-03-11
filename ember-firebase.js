@@ -394,6 +394,7 @@
 
     willDestroy: function () {
       this._teardownRef();
+      this._super();
     },
 
     _setupRef: Ember.observer('ref', function () {
@@ -624,6 +625,11 @@
       set(this, 'content', Ember.A());
       set(this, 'names', Ember.A());
       this._super();
+    },
+
+    _teardownRef: function () {
+      this._super();
+      set(this, 'names', null);
     },
 
     /**
