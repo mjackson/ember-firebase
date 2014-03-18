@@ -1,4 +1,4 @@
-ember-firebase is a stable, [thoroughly-tested](https://github.com/mjijackson/ember-firebase/tree/master/test) set of [Firebase](https://www.firebase.com/index.html) bindings for [Ember.js](http://emberjs.com/).
+ember-firebase is a stable, [thoroughly-tested](https://github.com/mjijackson/ember-firebase/tree/master/spec) set of [Firebase](https://www.firebase.com/index.html) bindings for [Ember.js](http://emberjs.com/).
 
 ### Firebase.Binding
 
@@ -149,7 +149,7 @@ Firebase.update(ref, { some: 'updates' }).then(function () {
 
 ### Tests
 
-To run the tests, change the `BASE_REF` variable in `test/index.html` to point to any Firebase location you have read/write access to and open the file in a browser.
+To run the tests, change the `BASE_REF` variable in `spec/index.html` to point to any Firebase location you have read/write access to and open the file in a browser.
 
 ### License
 
