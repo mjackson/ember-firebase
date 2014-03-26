@@ -620,8 +620,6 @@
    */
   Firebase.List = Ember.ArrayProxy.extend(Firebase.Proxy, {
 
-    names: null,
-
     _setupRef: function () {
       set(this, 'content', Ember.A());
       set(this, 'names', Ember.A());
@@ -633,6 +631,11 @@
       set(this, 'names', null);
     },
 
+    /**
+     * An array of child names this list contains, in order.
+     */
+    names: null,
+    
     /**
      * Returns true if this list has a child with the given name.
      *
