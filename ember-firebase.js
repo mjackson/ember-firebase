@@ -717,8 +717,6 @@
 
       // Add new objects.
       forEach(objects, function (object) {
-        // TODO: Is there any way we can add the objects
-        // at the given index instead of just using push?
         ref.push().set(getFirebaseValue(object));
       });
     },
