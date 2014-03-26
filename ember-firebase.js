@@ -788,7 +788,7 @@
   }
 
   function isFunction(object) {
-    return object && typeof object === 'function';
+    return typeof object === 'function';
   }
 
 }(Ember, Firebase));
