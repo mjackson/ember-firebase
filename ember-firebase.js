@@ -518,22 +518,23 @@
       return (childName in get(this, 'content'));
     },
 
-    childWasAdded: function (snapshot) {
+    _setPropertyValueFromSnapshot: function (snapshot) {
       var propertyName = snapshot.name();
 
       // If the proxy already has a property with the same name as the
       // snapshot it will override its content's value, so ignore it.
-      if (!(propertyName in this))
-        set(get(this, 'content'), propertyName, this.createValueFromSnapshot(snapshot));
+      if (propertyName in this)
+        return;
+
+      set(get(this, 'content'), propertyName, this.createValueFromSnapshot(snapshot));
+    },
+
+    childWasAdded: function (snapshot) {
+      this._setPropertyValueFromSnapshot(snapshot);
     },
 
     childWasChanged: function (snapshot) {
-      var propertyName = snapshot.name();
-
-      // If the proxy already has a property with the same name as the
-      // snapshot it will override its content's value, so ignore it.
-      if (!(propertyName in this))
-        set(get(this, 'content'), propertyName, this.createValueFromSnapshot(snapshot));
+      this._setPropertyValueFromSnapshot(snapshot);
     },
 
     childWasRemoved: function (snapshot) {
