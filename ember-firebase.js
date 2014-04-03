@@ -526,7 +526,11 @@
       if (propertyName in this)
         return;
 
-      set(get(this, 'content'), propertyName, this.createValueFromSnapshot(snapshot));
+      var content = get(this, 'content');
+      var value = this.createValueFromSnapshot(snapshot);
+
+      if (get(content, propertyName) !== value)
+        set(content, propertyName, value);
     },
 
     childWasAdded: function (snapshot) {
@@ -591,9 +595,7 @@
       return json;
     }
 
-  });
-
-  Firebase.Hash.reopenClass({
+  }).reopenClass({
 
     toString: function () {
       return 'Firebase.Hash';
@@ -659,7 +661,11 @@
 
     childWasAdded: function (snapshot, previousName) {
       var index = this._indexAfter(previousName);
-      get(this, 'content').replace(index, 0, [ this.createValueFromSnapshot(snapshot) ]);
+      var value = this.createValueFromSnapshot(snapshot);
+
+      // TODO: How should we deal with extraneous child_added events?
+
+      get(this, 'content').replace(index, 0, [ value ]);
       get(this, 'names').replace(index, 0, [ snapshot.name() ]);
     },
 
@@ -667,20 +673,21 @@
       var index = this._indexAfter(previousName);
       var value = this.createValueFromSnapshot(snapshot);
 
-      // If createValueFromSnapshot returns the same object we can skip the replace.
-      if (this.objectAt(index) !== value) {
-        get(this, 'content').replace(index, 1, [ value ]);
-        get(this, 'names').replace(index, 1, [ snapshot.name() ]);
-      }
+      if (this.objectAt(index) === value)
+        return;
+
+      get(this, 'content').replace(index, 1, [ value ]);
+      get(this, 'names').replace(index, 1, [ snapshot.name() ]);
     },
 
     childWasRemoved: function (snapshot) {
       var index = get(this, 'names').indexOf(snapshot.name());
 
-      if (index !== -1) {
-        get(this, 'content').replace(index, 1);
-        get(this, 'names').replace(index, 1);
-      }
+      if (index === -1)
+        return;
+
+      get(this, 'content').replace(index, 1);
+      get(this, 'names').replace(index, 1);
     },
 
     childWasMoved: function (snapshot, previousName) {
@@ -762,9 +769,7 @@
       return json;
     }
 
-  });
-
-  Firebase.List.reopenClass({
+  }).reopenClass({
 
     toString: function () {
       return 'Firebase.List';
