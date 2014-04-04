@@ -662,9 +662,6 @@
     childWasAdded: function (snapshot, previousName) {
       var index = this._indexAfter(previousName);
       var value = this.createValueFromSnapshot(snapshot);
-
-      // TODO: How should we deal with extraneous child_added events?
-
       get(this, 'content').replace(index, 0, [ value ]);
       get(this, 'names').replace(index, 0, [ snapshot.name() ]);
     },
