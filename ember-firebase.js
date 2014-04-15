@@ -519,18 +519,17 @@
     },
 
     _setPropertyValueFromSnapshot: function (snapshot) {
-      var propertyName = snapshot.name();
-
-      // If the proxy already has a property with the same name as the
-      // snapshot it will override its content's value, so ignore it.
-      if (propertyName in this)
-        return;
-
-      var content = get(this, 'content');
+      var property = snapshot.name();
       var value = this.createValueFromSnapshot(snapshot);
 
-      if (get(content, propertyName) !== value)
-        set(content, propertyName, value);
+      if (get(this, property) === value)
+        return;
+
+      // If the proxy doesn't have a property with the snapshot name, set the value
+      // directly on the content object to avoid invoking setUnknownProperty.
+      var target = (property in this) ? this : get(this, 'content');
+
+      set(target, property, value);
     },
 
     childWasAdded: function (snapshot) {
