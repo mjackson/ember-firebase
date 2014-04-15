@@ -580,19 +580,6 @@
      */
     toList: function () {
       return Firebase.List.create({ ref: get(this, 'ref') });
-    },
-
-    /**
-     * Returns a plain JavaScript object representation of this hash.
-     */
-    toJSON: function () {
-      var json = {};
-
-      var content = get(this, 'content');
-      for (var property in content)
-        json[property] = getFirebaseValue(get(content, property));
-
-      return json;
     }
 
   }).reopenClass({
@@ -750,20 +737,6 @@
      */
     toHash: function () {
       return Firebase.Hash.create({ ref: get(this, 'ref') });
-    },
-
-    /**
-     * Returns a plain JavaScript object representation of this list.
-     */
-    toJSON: function () {
-      var content = get(this, 'content');
-      var names = get(this, 'names');
-
-      var json = {};
-      for (var i = 0, len = names.length; i < len; ++i)
-        json[names[i]] = getFirebaseValue(content[i]);
-
-      return json;
     }
 
   }).reopenClass({
