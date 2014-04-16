@@ -94,6 +94,16 @@ describe('A Firebase.Hash', function () {
         expect(hash.get('otherKey')).to.equal('otherValue');
       });
     });
+
+    describe('and then removed', function () {
+      beforeEach(function () {
+        return Firebase.remove(hash.get('ref').child('key'));
+      });
+
+      it('removes the value', function () {
+        expect(hash.get('key')).to.equal(undefined);
+      });
+    });
   });
 
   describe('setWithPriority', function () {
@@ -106,4 +116,38 @@ describe('A Firebase.Hash', function () {
     });
   });
 
+});
+
+var CustomHash = Firebase.Hash.extend({
+
+  key: 'default value'
+
+});
+
+describe('A Firebase.Hash subclass with default values', function () {
+
+  var hash;
+  beforeEach(function () {
+    hash = CustomHash.create({ ref: BASE_REF });
+  });
+
+  describe('when a property with a default value is set', function () {
+    beforeEach(function () {
+      return Firebase.set(hash.get('ref').child('key'), 'custom value');
+    });
+
+    it('reflects the change', function () {
+      expect(hash.get('key')).to.equal('custom value');
+    });
+
+    describe('and then removed', function () {
+      beforeEach(function () {
+        return Firebase.remove(hash.get('ref').child('key'));
+      });
+
+      it('returns the default value', function () {
+        expect(hash.get('key')).to.equal('default value');
+      });
+    });
+  });
 });

@@ -541,7 +541,14 @@
     },
 
     childWasRemoved: function (snapshot) {
-      set(get(this, 'content'), snapshot.name(), undefined);
+      var property = snapshot.name();
+      var target = (property in this) ? this : get(this, 'content');
+
+      // Revert to the original value that was used on the target object's prototype.
+      var proto = target.constructor && target.constructor.prototype;
+      var value = proto && proto[property];
+
+      set(target, property, value);
     },
 
     /**
