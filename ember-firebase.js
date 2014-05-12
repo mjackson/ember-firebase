@@ -5,7 +5,7 @@
       fmt = Ember.String.fmt,
       map = Ember.EnumerableUtils.map,
       forEach = Ember.EnumerableUtils.forEach,
-      RSVP = Ember.RSVP;
+      Promise = Ember.RSVP.Promise;
 
   /**
    * Returns a promise for the value at the given ref. The second argument
@@ -15,13 +15,11 @@
   Firebase.get = function (ref, createValueFromSnapshot) {
     createValueFromSnapshot = createValueFromSnapshot || getSnapshotValue;
 
-    var deferred = RSVP.defer();
-
-    ref.once('value', function (snapshot) {
-      deferred.resolve(createValueFromSnapshot(snapshot));
-    }, deferred.reject);
-
-    return deferred.promise;
+    return new Promise(function(resolve, reject) {
+      ref.once('value', function (snapshot) {
+        resolve(createValueFromSnapshot(snapshot));
+      }, reject);
+    });
   };
 
   /**
@@ -39,24 +37,25 @@
    * promise that resolves to the location reference when the sync is complete.
    */
   Firebase.set = function (ref, object, priority) {
-    var deferred = RSVP.defer();
     var value = getFirebaseValue(object);
 
-    function onComplete(error) {
-      if (error) {
-        deferred.reject(error);
+    function onComplete (resolve, reject) {
+      return function (error) {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(ref);
+        }
+      };
+    }
+
+    return new Promise(function(resolve, reject) {
+      if (priority === undefined) {
+        ref.set(value, onComplete(resolve, reject));
       } else {
-        deferred.resolve(ref);
+        ref.setWithPriority(value, priority, onComplete(resolve, reject));
       }
-    }
-
-    if (priority === undefined) {
-      ref.set(value, onComplete);
-    } else {
-      ref.setWithPriority(value, priority, onComplete);
-    }
-
-    return deferred.promise;
+    });
   };
 
   /**
@@ -81,18 +80,17 @@
    * promise that resolves to the ref when the sync is complete.
    */
   Firebase.update = function (ref, object) {
-    var deferred = RSVP.defer();
     var value = getFirebaseValue(object);
 
-    ref.update(value, function (error) {
-      if (error) {
-        deferred.reject(error);
-      } else {
-        deferred.resolve(ref);
-      }
+    return new Promise(function(resolve, reject) {
+      ref.update(value, function (error) {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(ref);
+        }
+      });
     });
-
-    return deferred.promise;
   };
 
   /**
@@ -101,17 +99,15 @@
   Firebase.transaction = function (ref, updateCallback, createValueFromSnapshot) {
     createValueFromSnapshot = createValueFromSnapshot || getSnapshotValue;
 
-    var deferred = RSVP.defer();
-
-    ref.transaction(updateCallback, function (error, committed, snapshot) {
-      if (error) {
-        deferred.reject(error);
-      } else {
-        deferred.resolve(createValueFromSnapshot(snapshot));
-      }
+    return new Promise(function(resolve, reject) {
+      ref.transaction(updateCallback, function (error, committed, snapshot) {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(createValueFromSnapshot(snapshot));
+        }
+      });
     });
-
-    return deferred.promise;
   };
 
   /**
