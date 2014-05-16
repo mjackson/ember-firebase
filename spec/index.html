@@ -13,12 +13,13 @@
     <script src="lib/handlebars.js"></script>
     <script src="lib/ember.js"></script>
     <script src="lib/mocha.js"></script>
-    <script>mocha.setup('bdd');</script>
     <script src="lib/chai.js"></script>
-    <script src="lib/mocha-as-promised.js"></script>
-    <script src="https://cdn.firebase.com/v0/firebase.js"></script>
+    
+    <script src="https://cdn.firebase.com/js/client/1.0.15/firebase.js"></script>
 
     <script>
+    mocha.setup('bdd');
+
     // All tests will run against this ref, so make sure you
     // don't have any data under it you can't afford to lose.
     var BASE_REF = new Firebase('https://ember-firebase.firebaseio.com');
