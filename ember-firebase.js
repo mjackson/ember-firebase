@@ -234,19 +234,23 @@
     },
 
     _scheduleSync: function (object, direction, snapshot) {
-      var directionMap = this._directionMap;
-      var existingDirection = directionMap.get(object);
+      var self = this;
 
-      // if we haven't scheduled the binding yet, schedule it
-      if (!existingDirection) {
-        Ember.run.schedule('sync', this, this._sync, object, snapshot);
-        directionMap.set(object, direction);
-      }
+      Ember.run(function() {
+        var directionMap = self._directionMap;
+        var existingDirection = directionMap.get(object);
 
-      // If both a "back" and "fwd" operation have been scheduled on the
-      // same object, default to "fwd" so that it remains deterministic.
-      if (existingDirection === 'back' && direction === 'fwd')
-        directionMap.set(object, 'fwd');
+        // if we haven't scheduled the binding yet, schedule it
+        if (!existingDirection) {
+            Ember.run.schedule('sync', self, self._sync, object, snapshot);
+            directionMap.set(object, direction);
+        }
+
+        // If both a "back" and "fwd" operation have been scheduled on the
+        // same object, default to "fwd" so that it remains deterministic.
+        if (existingDirection === 'back' && direction === 'fwd')
+            directionMap.set(object, 'fwd');
+      });
     },
 
     _sync: function (object, snapshot) {
